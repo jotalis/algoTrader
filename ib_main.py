@@ -2,7 +2,7 @@ from ib_insync import *
 from algo_trader import constants
 import pandas as pd
 
-requested_contract = 'MES'
+requested_contract = 'ES'
 ib = IB()
 ib.connect('127.0.0.1', 7497, 0)
 

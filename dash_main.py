@@ -11,7 +11,7 @@ contract = 'MES'
 # Default Dataframes
 df = pd.read_csv('data/' + contract + '.csv')
 candlestick_df = df
-algo_df = mrr.get_mrr(df)
+algo_df = mrr.get_mrr(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
 
 # Default Graphs
 candlestick_graph = go.Figure(go.Candlestick(
@@ -32,11 +32,22 @@ app.layout = html.Div([
             value = 'MES'           
         )
     ]),
-    html.Div([
-        dcc.Graph(id="candlestick_graph"),
-        dcc.Graph(id="algo_graph"),
-    ]),
-    html.Pre(id='relayout-data')
+    dcc.Graph(
+        id="candlestick_graph",
+        figure=candlestick_graph,
+        config={'displayModeBar': False},
+        style={'height': '750px'}  # Set the height for algo_graph
+    ),
+    dcc.Graph(
+        id="algo_graph",
+        figure=algo_graph,
+        config={'displayModeBar': False},
+        style={'height': '750px'}  # Set the height for algo_graph
+    ),
+    # html.Div([
+    #     dcc.Graph(id="candlestick_graph"),
+    #     dcc.Graph(id="algo_graph"), 
+    # ] , style={'display': 'flex', 'flexDirection': 'column'}),
 ])
 
 
@@ -51,11 +62,11 @@ app.layout = html.Div([
 )
 # Update Function
 def display_graphs(value, relayoutData, candlestick_graph, algo_graph):
-    global candlestick_df, algo_df, contract
+    global df ,candlestick_df, algo_df, contract
 
     if relayoutData == None or value != contract: # Contract Changed
         df = pd.read_csv('data/' + value + '.csv')
-        algo_df = mrr.get_mrr(df)
+        algo_df = mrr.get_mrr(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
         
         # Update candlestick graph
         candlestick_graph = go.Figure(go.Candlestick(
@@ -95,7 +106,7 @@ def display_graphs(value, relayoutData, candlestick_graph, algo_graph):
         # Update algo graph
         # Set min max of algo graph
         # TODO: fix algo_graph ymin and ymax
-        algo_graph['layout']['yaxis']['range'] = [candlestick_xbound['close'].min()-10, candlestick_xbound['close'].max()+10]
+        algo_graph['layout']['yaxis']['range'] = [df['close'].min()-10, df['close'].max()+10]
         algo_graph['layout']['yaxis']['autorange'] = False
 
     return [candlestick_graph, algo_graph]
