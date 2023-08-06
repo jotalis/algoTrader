@@ -1,0 +1,47 @@
+#-----------------------------------------------------------------------------------------
+#
+#-----------------------------------------------------------------------------------------
+#
+#
+#
+
+input averagePeriod     = 14;
+input averagePrice      = close;
+input averageType       = AverageType.SMA;
+input levelsPeriod      = 35;
+input levelsUpPercent   = 90;
+input levelsDownPercent = 10; 
+input showSignals       = yes;
+
+#
+
+plot average = MovingAverage(averageType, averagePrice, averagePeriod);
+
+        def minAverage = Lowest(average, Max(levelsPeriod, 1));
+        def maxAverage = Highest(average, Max(levelsPeriod, 1));
+
+plot levelUp   = minAverage + (maxAverage - minAverage) * levelsUpPercent / 100.0;
+plot levelDown = minAverage + (maxAverage - minAverage) * levelsDownPercent / 100.0;
+
+
+average.SetLineWeight(2);
+average.DefineColor("up", GetColor(6));
+average.DefineColor("neutral", GetColor(7));
+average.DefineColor("down", GetColor(2));
+average.AssignValueColor(if average > levelUp then average.Color("up") else if average < levelDown then average.Color("down") else average.Color("neutral"));
+
+levelUp.SetDefaultColor(GetColor(6));
+levelDown.SetDefaultColor(GetColor(2));
+levelUp.SetStyle(Curve.SHORT_DASH);
+levelDown.SetStyle(Curve.SHORT_DASH);
+
+plot upSignalCross   = if average crosses above levelUp then levelUp else Double.NaN;
+     upSignalCross.SetHiding(!showSignals);
+     upSignalCross.SetDefaultColor(GetColor(6));
+     upSignalCross.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+     upSignalCross.HideBubble();
+plot downSignalCross = if average crosses below levelDown then levelDown else Double.NaN;
+     downSignalCross.SetHiding(!showSignals);
+     downSignalCross.SetDefaultColor(GetColor(2));
+     downSignalCross.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+     downSignalCross.HideBubble();

@@ -3,3 +3,5 @@ del.py
 *.png
 algoTrader/__pycache__
 .vscode
+algoTrader/algorithms/mrr.txt
+testing.py

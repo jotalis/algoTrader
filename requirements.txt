@@ -2,3 +2,4 @@ tzdata
 ib_insync
 ibapi
 dash
+TA-Lib
