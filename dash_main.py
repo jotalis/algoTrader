@@ -1,13 +1,13 @@
-from dash import Dash, html, dcc, callback, Output, Input, State
+from dash import Dash, html, dcc, Output, Input, State
 import plotly.express as px
 import pandas as pd
 from algo_trader import constants
+from algo_trader.algorithms import mrr
 import plotly.graph_objects as go
-
 
 contract = 'MES' #Default Contract
 df = pd.read_csv('data/' + contract + '.csv')
-
+algo_df = mrr.get_mrr(df)[0]
 #Initial Graphs
 candlebar = go.Figure(go.Candlestick(
     x=df['date'],
@@ -16,7 +16,7 @@ candlebar = go.Figure(go.Candlestick(
     low=df['low'],
     close=df['close']
 ))
-algo_graph = px.line(df, x='date', y='close')
+algo_graph = px.line(algo_df, x='date', y='close')
 
 #Create App
 app = Dash(__name__)
@@ -44,10 +44,12 @@ app.layout = html.Div([
       State('algo_graph', 'figure')]
 )
 def display_graphs(value, relayoutData, candlebar, algo_graph):
-    global df, contract
+    global df, algo_df, contract
+
     if relayoutData == None or value != contract:
         df = pd.read_csv('data/' + value + '.csv')
         contract = value
+        
         candlebar = go.Figure(go.Candlestick(
             x=df['date'],
             open=df['open'],
@@ -55,18 +57,14 @@ def display_graphs(value, relayoutData, candlebar, algo_graph):
             low=df['low'],
             close=df['close']
         ))
-        candlebar.update_layout(
-            xaxis_rangeslider_visible=False
-        )
-        algo_graph = px.line(df, x='date', y='close')
-        algo_graph.update_layout(
-            xaxis_rangeslider_visible=True
-        )
-    
+        candlebar.update_layout(xaxis_rangeslider_visible=False)
+        
+        algo_graph = px.line(algo_df, x='date', y='close')
+        algo_graph.update_layout(xaxis_rangeslider_visible=True)
+        
         return [candlebar, algo_graph] 
     
     elif 'xaxis.range' in relayoutData:
-        
         xmin = relayoutData["xaxis.range"][0]
         xmax = relayoutData["xaxis.range"][1]
         dff = df[df['date'].between(xmin, xmax)]
@@ -77,10 +75,9 @@ def display_graphs(value, relayoutData, candlebar, algo_graph):
             low=dff['low'],
             close=dff['close']
         ))
-        candlebar.update_layout(
-            xaxis_rangeslider_visible=False
-        )
-        # algo_graph = px.line(df, x='date', y='close')
+        candlebar.update_layout(xaxis_rangeslider_visible=False)
+        algo_graph['layout']['yaxis']['range'] =[dff['close'].min()-10, dff['close'].max()+10]
+        algo_graph['layout']['yaxis']['autorange'] = False
 
     return [candlebar, algo_graph]
 
