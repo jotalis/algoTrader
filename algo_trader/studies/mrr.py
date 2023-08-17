@@ -1,6 +1,13 @@
 import talib
 import pandas as pd
+import plotly.graph_objects as go
+
 def get_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True):
+    mrr_data = calc_mrr(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals)
+    mrr = [go.Scatter(x=mrr_data[x]['date'],y=mrr_data[x]['close'], name = x, showlegend = True) for x in mrr_data]
+    return mrr
+
+def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True,):
     
     # Get specified data of candlestick
     data = df[averagePrice]

@@ -6,5 +6,11 @@ CONTRACTS = {
     'TSLA': Stock('TSLA', 'SMART', 'USD'),
 }
 
+TIME_INTERVALS = [
+    '5 mins',
+    '15 mins',
+    '30 mins',
+]
+
 
 
