@@ -49,12 +49,11 @@ while True:
             requested_contract = file.readline().strip()
             bar_size = file.readline().strip()
             file.close()
-            #print(requested_contract, bar_size)
         os.remove("contract_request.txt")
-    if requested_contract != bars.contract.symbol:
+
+    if requested_contract != bars.contract.symbol or bar_size != bars.barSizeSetting:
         if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False
         else: ib.reqMarketDataType(3); rth = True
-
         bars = ib.reqHistoricalData(contract = constants.CONTRACTS[requested_contract],
             endDateTime = '',durationStr = duration, barSizeSetting = bar_size,
             whatToShow = 'BID', useRTH = rth, formatDate = 1, 

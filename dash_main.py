@@ -7,11 +7,8 @@ import plotly.graph_objects as go
 from algo_trader.chart_helpers import *
 from plotly.subplots import make_subplots
 # Default Contract
-contract = 'MES' 
-with open("contract_request.txt", "w") as file:
-    file.write(contract)
-    file.close()
-
+contract = '' 
+bar_size = ''
 # Initialize Dash App
 app = Dash(__name__)
 app.layout = html.Div([
@@ -39,7 +36,7 @@ app.layout = html.Div([
     ),
     dcc.Interval(
         id = 'graph_update',
-        interval = 5000,
+        interval = 500,
         n_intervals = 0
     ),
 ])
@@ -54,19 +51,23 @@ app.layout = html.Div([
 
 )
 # Update Function
-def display_graphs(value, bar_size, intervals):
-    global df, candlestick_df, algo_df, contract
-
-    if value != contract: # Contract Changed
+def display_graphs(new_contract, new_bar, intervals):
+    global df, contract, bar_size
+    # print(new_contract, new_bar, intervals)
+    if new_contract != contract or new_bar != bar_size: # Contract Changed
         with open("contract_request.txt", "w") as file:
-            file.write(value + '\n')
-            file.write(bar_size)
+            file.write(new_contract + '\n')
+            file.write(new_bar)
             file.close()
-        contract = value
+        contract = new_contract
+        bar_size = new_bar
 
-    df = pd.read_csv('data/' + value + '.csv')
+    df = pd.read_csv('data/' + new_contract + '.csv')
     fig = get_default_fig(df)
     
+    # Add Studies
+    fig.add_traces(get_mrr(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10),  rows=2, cols = 1)
+
     return fig
 
 app.run(debug=True)
