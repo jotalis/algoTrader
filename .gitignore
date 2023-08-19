@@ -5,3 +5,6 @@ algoTrader/__pycache__
 .vscode
 algoTrader/algorithms/mrr.txt
 testing.py
+dash_main2.py
+__pycache__
+contract_request.txt

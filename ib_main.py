@@ -6,6 +6,9 @@ import time
 
 # Callback function
 def on_new_bar(bars, hasNewBar):
+    print("helo")
+    print(bars)
+    print(hasNewBar)
     if hasNewBar:
         util.df(bars).tail(1).to_csv('data/' + requested_contract + '.csv',
                                     mode = 'a', index=False, header = False)
@@ -41,8 +44,7 @@ bars.updateEvent+= on_new_bar
 while True:
 
     # Updates IB-Insync loop
-    ib.sleep(0.1)
-
+    ib.sleep(0.01)
     # Check for new contract request
     if os.path.exists("contract_request.txt"):
         with open("contract_request.txt", "r") as file:
@@ -58,5 +60,7 @@ while True:
             endDateTime = '',durationStr = duration, barSizeSetting = bar_size,
             whatToShow = 'BID', useRTH = rth, formatDate = 1, 
             keepUpToDate = True)
-        df = util.df(bars).to_csv('data/' + requested_contract + '.csv', index=False)
-
+        try:
+            df = util.df(bars).to_csv('data/' + requested_contract + '.csv', index=False)
+        except:
+            df = None

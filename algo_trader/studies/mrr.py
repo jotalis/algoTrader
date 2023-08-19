@@ -1,11 +1,47 @@
 import talib
 import pandas as pd
 import plotly.graph_objects as go
+import numpy as np
 
-def get_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True):
+def get_mrr(fig, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True):
     mrr_data = calc_mrr(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals)
-    mrr = [go.Scatter(x=mrr_data[x]['date'],y=mrr_data[x]['close'], name = x, showlegend = True) for x in mrr_data]
-    return mrr
+    plots, up_cross, down_cross = mrr_data[0], mrr_data[1]['up_cross_signals'], mrr_data[1]['down_cross_signals']
+
+    # Plot average, level_up, level_down
+    fig.add_traces([go.Scatter(x=plots[x]['date'],y=plots[x]['close'], name = x, showlegend = True) for x in plots], rows=2, cols = 1)
+    
+    # Plot arrows
+    for idx in up_cross:
+        fig.add_annotation(
+                x=df['date'][idx],
+                y=plots['average']['close'][idx-(levelsPeriod+averagePeriod-2)],
+                xref="x2", yref="y2", text="UP",
+                showarrow=True,
+                font=dict(
+                    family="Courier New, monospace",
+                    size=16,
+                    color="#40826D"
+                    ),
+                arrowhead=2, arrowsize=1, arrowwidth=3, arrowcolor="#009E60",
+                ax=0, ay=-30,
+                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#C1E1C1"
+            )
+         
+    for idx in down_cross:
+        fig.add_annotation(
+                x=df['date'][idx],
+                y=plots['average']['close'][idx-(levelsPeriod+averagePeriod-2)],
+                xref="x2", yref="y2", text="DOWN",
+                showarrow=True,
+                font=dict(
+                    family="Courier New, monospace",
+                    size=16,
+                    color="#A40826"
+                    ),
+                arrowhead=2, arrowsize=1, arrowwidth=3, arrowcolor="#FF3131",
+                ax = 0, ay=30,
+                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#E1C1C1"
+            )
 
 def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True,):
     
@@ -24,23 +60,39 @@ def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA'
 
     # PLOT 2
     level_up = rolling_min + (rolling_max - rolling_min) * levelsUpPercent / 100 
-    
     # PLOT 3
     level_down = rolling_min + (rolling_max - rolling_min) * levelsDownPercent / 100 
     
     # Concatenate with date column to make dataframes
-    average_plot = pd.concat([dates, average], axis=1) 
-    level_up = pd.concat([dates, level_up], axis=1)
-    level_down = pd.concat([dates, level_down], axis=1)
+    average_df = pd.concat([dates, average], axis=1) 
+    level_up_df = pd.concat([dates, level_up], axis=1)
+    level_down_df = pd.concat([dates, level_down], axis=1)
 
     # Remove NaN values from all plots and reset start index
     starting_index = levelsPeriod+averagePeriod-2
-    average_plot = average_plot[starting_index:].reset_index(drop=True)
-    level_up = level_up[starting_index:].reset_index(drop=True)
-    level_down = level_down[starting_index:].reset_index(drop=True)
+    average_df = average_df[starting_index:].reset_index(drop=True)
+    level_up_df = level_up_df[starting_index:].reset_index(drop=True)
+    level_down_df = level_down_df[starting_index:].reset_index(drop=True)
 
-    return {
-        'average' :average_plot,
-        'level_up': level_up,
-        'level_down' :level_down
-    }
+    # Add signals
+    # Find indexes where lines cross  
+    up_cross = (np.where(np.diff(np.sign(average - level_up)) != 0)[0] + 1)
+    down_cross = (np.where(np.diff(np.sign(average - level_down)) != 0)[0] + 1)
+
+    # Find order of cross direction
+    up_directions = np.where(average[up_cross] > level_up[up_cross], 1, 0)
+    down_directions = np.where(average[down_cross] < level_down[down_cross], 1, 0)
+    
+    # Remove invalid cross signals
+    up_cross_signals = [up_cross[i] for i, x in enumerate(up_directions) if x and up_cross[i] > starting_index]
+    down_cross_signals = [down_cross[i] for i, x in enumerate(down_directions) if x and down_cross[i] > starting_index]
+
+    return [{
+        'average' :average_df,
+        'level_up': level_up_df,
+        'level_down' :level_down_df
+        },
+        {
+        'up_cross_signals': up_cross_signals,
+        'down_cross_signals': down_cross_signals
+        }]

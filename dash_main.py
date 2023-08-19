@@ -1,11 +1,11 @@
 from dash import Dash, html, dcc, Output, Input, State
-import plotly.express as px
 import pandas as pd
 from algo_trader import constants
 from algo_trader.studies import mrr
 import plotly.graph_objects as go
 from algo_trader.chart_helpers import *
 from plotly.subplots import make_subplots
+from dash import clientside_callback
 # Default Contract
 contract = '' 
 bar_size = ''
@@ -23,10 +23,8 @@ app.layout = html.Div([
         dcc.Dropdown(id = 'bar_size',
             options = constants.TIME_INTERVALS,
             value = '5 mins'       
-        ),
-        
+        ),        
     ]),
-
 
     dcc.Graph(
         id="graph_subplots",
@@ -39,6 +37,7 @@ app.layout = html.Div([
         interval = 500,
         n_intervals = 0
     ),
+    dcc.Store(id='scroll-zoom-store', data=True)
 ])
 
 # Define app callbacks
@@ -47,9 +46,8 @@ app.layout = html.Div([
     [Input(component_id='contract_dropdown', component_property= 'value'),
      Input(component_id='bar_size', component_property= 'value'),
      Input('graph_update', 'n_intervals')],
-     
-
 )
+
 # Update Function
 def display_graphs(new_contract, new_bar, intervals):
     global df, contract, bar_size
@@ -66,9 +64,17 @@ def display_graphs(new_contract, new_bar, intervals):
     fig = get_default_fig(df)
     
     # Add Studies
-    fig.add_traces(get_mrr(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10),  rows=2, cols = 1)
+    get_mrr(fig, df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
+
+    # Share last xaxis with all traces
+    fig.update_traces(xaxis = 'x2')
 
     return fig
 
+app.clientside_callback(
+    """function(scrollZoomState) {return {'scrollZoom': true};}""",
+    Output('graph_subplots', 'config'),
+    Input('scroll-zoom-store', 'data')
+)
 app.run(debug=True)
 

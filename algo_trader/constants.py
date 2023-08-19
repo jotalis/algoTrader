@@ -10,7 +10,7 @@ TIME_INTERVALS = [
     '5 mins',
     '15 mins',
     '30 mins',
+    '5 secs'
 ]
 
-
-
+NUM_BARS = 150
