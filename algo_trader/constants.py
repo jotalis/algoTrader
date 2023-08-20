@@ -10,6 +10,7 @@ TIME_INTERVALS = [
     '5 mins',
     '15 mins',
     '30 mins',
+    '1 min',
     '5 secs'
 ]
 

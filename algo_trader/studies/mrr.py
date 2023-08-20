@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 
-def get_mrr(fig, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True):
-    mrr_data = calc_mrr(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals)
+def get_mrr(fig, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
+    mrr_data = calc_mrr(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals, invert)
     plots, up_cross, down_cross = mrr_data[0], mrr_data[1]['up_cross_signals'], mrr_data[1]['down_cross_signals']
 
     # Plot average, level_up, level_down
@@ -43,7 +43,7 @@ def get_mrr(fig, df, averagePeriod = 14, averagePrice = 'close', averageType = '
                 bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#E1C1C1"
             )
 
-def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True,):
+def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
     
     # Get specified data of candlestick
     data = df[averagePrice]
@@ -79,13 +79,17 @@ def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA'
     up_cross = (np.where(np.diff(np.sign(average - level_up)) != 0)[0] + 1)
     down_cross = (np.where(np.diff(np.sign(average - level_down)) != 0)[0] + 1)
 
-    # Find order of cross direction
-    up_directions = np.where(average[up_cross] > level_up[up_cross], 1, 0)
-    down_directions = np.where(average[down_cross] < level_down[down_cross], 1, 0)
-    
-    # Remove invalid cross signals
-    up_cross_signals = [up_cross[i] for i, x in enumerate(up_directions) if x and up_cross[i] > starting_index]
-    down_cross_signals = [down_cross[i] for i, x in enumerate(down_directions) if x and down_cross[i] > starting_index]
+    # Find order of cross direction and remove invalid cross signals
+    if invert:
+        up_directions = np.where(average[up_cross] < level_up[up_cross], 1, 0)
+        down_directions = np.where(average[down_cross] > level_down[down_cross], 1, 0)
+        down_cross_signals = [up_cross[i] for i, x in enumerate(up_directions) if x and up_cross[i] > starting_index]
+        up_cross_signals = [down_cross[i] for i, x in enumerate(down_directions) if x and down_cross[i] > starting_index]
+    else:
+        up_directions = np.where(average[up_cross] > level_up[up_cross], 1, 0)
+        down_directions = np.where(average[down_cross] < level_down[down_cross], 1, 0)
+        up_cross_signals = [up_cross[i] for i, x in enumerate(up_directions) if x and up_cross[i] > starting_index]
+        down_cross_signals = [down_cross[i] for i, x in enumerate(down_directions) if x and down_cross[i] > starting_index]
 
     return [{
         'average' :average_df,

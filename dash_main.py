@@ -4,41 +4,123 @@ from algo_trader import constants
 from algo_trader.studies import mrr
 import plotly.graph_objects as go
 from algo_trader.chart_helpers import *
-from plotly.subplots import make_subplots
-from dash import clientside_callback
+
+import dash_bootstrap_components as dbc
+
 # Default Contract
 contract = '' 
 bar_size = ''
 # Initialize Dash App
-app = Dash(__name__)
-app.layout = html.Div([
-    html.Div([
-        dcc.Dropdown(id = 'contract_dropdown',
-            options = list(constants.CONTRACTS.keys()),
-            value = 'MES'           
-        ),
-    ]),
+app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
-    html.Div([
-        dcc.Dropdown(id = 'bar_size',
-            options = constants.TIME_INTERVALS,
-            value = '5 mins'       
-        ),        
-    ]),
+app.layout = dbc.Container(
+    children = [
+        dcc.Interval(id = 'graph_update', interval = 500, n_intervals = 0),
+        dcc.Store(id='scroll-zoom-store', data=True),
+        dbc.Row([
+            dbc.Col([
+                dbc.Card(
+                [
+                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", className="card-text")),
+                    dbc.CardBody([
+                        html.P("$156,789", className="card-text"),
+                        html.P("+12.5% from last week", className="card-text"),
+                    ])
+                ],
+                color="#202A44",
+                className = 'mt-3 mb-3 text-light',
+                style = {'height': '48vh'}
+                ),
+                dbc.Card(
+                [
+                    dbc.CardHeader(html.H2("OPEN POSITIONS", className="card-text")),
+                    dbc.CardBody([
+                        html.P("$156,789", className="card-text"),
+                        html.P("+12.5% from last week", className="card-text"),
+                    ]),
+                ],
+                color="#202A44",
+                className = 'mb-3 text-light',
+                style = {'height': '48vh'}
+                ),
+            ],
+            width = {'size': 2, 'order': 1}),
+            
+            dbc.Col([
+                dbc.Card(
+                [
+                    dbc.CardHeader(
+                        [
+                        dcc.Dropdown(id = 'contract_dropdown',
+                            options = list(constants.CONTRACTS.keys()),
+                            value = 'MES',
+                            clearable = False,
+                            style = {"float": "left", "width": "10vw", "font-weight": "bold"}
+                        ),
+                        html.Div(
+                            className = 'graph-top-right inline-block',
+                            children = [
+                                dcc.Dropdown(id = 'bar_size',
+                                    options = constants.TIME_INTERVALS,
+                                    clearable = False,
+                                    value = '5 mins',
+                                    style = {"float": "right", "width": "10vw", "font-weight": "bold"}
+                                ),
+                            ],  
+                        )]
+                    ),
 
-    dcc.Graph(
-        id="graph_subplots",
-        config={'displayModeBar': False},
-        style={'height': '1000px'},
-        className = 'chart-graph', 
-    ),
-    dcc.Interval(
-        id = 'graph_update',
-        interval = 500,
-        n_intervals = 0
-    ),
-    dcc.Store(id='scroll-zoom-store', data=True)
-])
+                    dbc.CardBody([
+                        dcc.Graph(
+                            id="graph_subplots",
+                            config={'displayModeBar': False},
+                            style={'height': '90vh'},
+                        ),
+                    ]),
+                ],
+                color="#202A44",
+                className = 'mt-3 mb-3',
+                style = {'height': '97vh'}
+                ),
+            ],
+            width = {'size': 8, 'order': 2}),
+
+            
+            dbc.Col([
+                dbc.Card(
+                [
+                    dbc.CardHeader(html.H2("BOT DASHBOARD", className="card-text")),
+                    dbc.CardBody([
+                        html.P("$156,789", className="card-text"),
+                        html.P("+12.5% from last week", className="card-text"),
+                        
+                    ])
+                ],
+                color="#202A44",
+                className = 'mt-3 mb-3 text-light',
+                style = {'height': '48vh'}
+                ),
+                dbc.Card(
+                [
+                    dbc.CardHeader(html.H2("Bot Console")),
+                    dbc.CardBody([
+                        html.P("$156,789"),
+                        html.P("+12.5% from last week", className="card-text"),
+                    ]),
+                ],
+                color="#202A44",
+                className = 'mb-3 text-light',
+                style = {'height': '48vh'}
+                ),
+            ],
+            width = {'size': 2, 'order': 3}),
+        ]),
+    ],
+    fluid = True,
+    style = {'backgroundColor': '#182033'}
+    
+)
+
 
 # Define app callbacks
 @app.callback(
@@ -51,7 +133,6 @@ app.layout = html.Div([
 # Update Function
 def display_graphs(new_contract, new_bar, intervals):
     global df, contract, bar_size
-    # print(new_contract, new_bar, intervals)
     if new_contract != contract or new_bar != bar_size: # Contract Changed
         with open("contract_request.txt", "w") as file:
             file.write(new_contract + '\n')
@@ -64,11 +145,12 @@ def display_graphs(new_contract, new_bar, intervals):
     fig = get_default_fig(df)
     
     # Add Studies
-    get_mrr(fig, df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
+    # get_mrr(fig, df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
+    get_mrr(fig, df, invert = True)
 
     # Share last xaxis with all traces
     fig.update_traces(xaxis = 'x2')
-
+    
     return fig
 
 app.clientside_callback(

@@ -16,7 +16,7 @@ def on_new_bar(bars, hasNewBar):
 # Default Contract
 requested_contract = 'MES'
 duration = '1 D'
-bar_size = '15 mins'
+bar_size = '5 mins'
 rth = False
 
 ib = IB()
@@ -42,7 +42,6 @@ df = util.df(bars).to_csv('data/' + requested_contract + '.csv', index=False)
 bars.updateEvent+= on_new_bar
 
 while True:
-
     # Updates IB-Insync loop
     ib.sleep(0.01)
     # Check for new contract request
