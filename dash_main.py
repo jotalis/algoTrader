@@ -93,7 +93,13 @@ app.layout = dbc.Container(
                     dbc.CardBody([
                         html.P("$156,789", className="card-text"),
                         html.P("+12.5% from last week", className="card-text"),
-                        
+                        dbc.Checklist(
+                            id = "studies_checklist",
+                            options = [
+                                {"label": html.Span("MRR", style={"font-size": 15, "padding-left": 5}), "value": "MRR"},
+                                {"label": html.Span("DMI", style={"font-size": 15, "padding-left": 5}), "value": "DMI"},
+                            ]
+                        ),
                     ])
                 ],
                 color="#202A44",
@@ -125,13 +131,15 @@ app.layout = dbc.Container(
 # Define app callbacks
 @app.callback(
     Output('graph_subplots', 'figure'), 
-    [Input(component_id='contract_dropdown', component_property= 'value'),
-     Input(component_id='bar_size', component_property= 'value'),
+    [Input('contract_dropdown','value'),
+     Input('bar_size', 'value'),
+     Input('studies_checklist', 'value'),
      Input('graph_update', 'n_intervals')],
+
 )
 
 # Update Function
-def display_graphs(new_contract, new_bar, intervals):
+def display_graphs(new_contract, new_bar, studies, intervals):
     global df, contract, bar_size
     if new_contract != contract or new_bar != bar_size: # Contract Changed
         with open("contract_request.txt", "w") as file:
@@ -142,15 +150,8 @@ def display_graphs(new_contract, new_bar, intervals):
         bar_size = new_bar
 
     df = pd.read_csv('data/' + new_contract + '.csv')
-    fig = get_default_fig(df)
-    
-    # Add Studies
-    # get_mrr(fig, df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10)
-    get_mrr(fig, df, invert = True)
-
-    # Share last xaxis with all traces
-    fig.update_traces(xaxis = 'x2')
-    
+    fig = get_fig(df, studies)
+       
     return fig
 
 app.clientside_callback(
