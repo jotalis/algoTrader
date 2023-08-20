@@ -11,14 +11,14 @@ def get_mrr(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageTyp
     fig.add_traces([go.Scatter(x=plots[x]['date'],y=plots[x]['close'], name = x, showlegend = True) for x in plots], rows=row, cols = 1)
     
     # Ensure all graphs share the same x axis
-    fig.update_traces(xaxis = "x" + str(row))
+    # fig.update_traces(xaxis = "x" + str(row))
 
     # Plot arrows
     for idx in up_cross:
         fig.add_annotation(
                 x=df['date'][idx],
                 y=plots['average']['close'][idx-(levelsPeriod+averagePeriod-2)],
-                xref="x"+str(row), yref="y"+str(row), text="UP",
+                yref="y"+str(row), text="UP",
                 showarrow=True,
                 font=dict(
                     family="Courier New, monospace",
@@ -32,8 +32,8 @@ def get_mrr(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageTyp
     for idx in down_cross:
         fig.add_annotation(
                 x=df['date'][idx],
-                y=plots['average']['close'][idx-(levelsPeriod+averagePeriod-2)],
-                xref="x"+str(row), yref="y"+str(row), text="DOWN",
+                y=plots['average']['close'][idx-(levelsPeriod+averagePeriod-2)], yref="y"+str(row), text="DOWN",
+
                 showarrow=True,
                 font=dict(
                     family="Courier New, monospace",
@@ -44,6 +44,7 @@ def get_mrr(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageTyp
                 ax = 0, ay=30,
                 bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#E1C1C1"
             )
+
 
 def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
     

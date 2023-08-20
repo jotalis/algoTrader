@@ -97,6 +97,7 @@ app.layout = dbc.Container(
                             id = "studies_checklist",
                             options = [
                                 {"label": html.Span("MRR", style={"font-size": 15, "padding-left": 5}), "value": "MRR"},
+                                {"label": html.Span("MRR-INV", style={"font-size": 15, "padding-left": 5}), "value": "MRR-INV"},
                                 {"label": html.Span("DMI", style={"font-size": 15, "padding-left": 5}), "value": "DMI"},
                             ]
                         ),
