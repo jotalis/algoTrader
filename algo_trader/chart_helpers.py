@@ -23,7 +23,6 @@ def get_fig(df, studies):
     )
     fig.update_traces(xaxis="x"+str(row))
     fig.update_xaxes(rangeslider_visible = False, showspikes = True, spikemode = 'across')
-
     return fig
 
 def get_candlebar(fig, row, df):
