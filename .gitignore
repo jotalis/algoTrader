@@ -1,7 +1,7 @@
 .vscode
 __pycache__/
-algoTrader/__pycache__/
-algoTrader/algorithms/study_templates/
+algo_trader/__pycache__/
+algo_trader/algorithms/study_templates/
 
 tempCodeRunnerFile.py
 dash_main2.py
