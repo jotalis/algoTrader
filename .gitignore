@@ -3,7 +3,7 @@ del.py
 *.png
 algoTrader/__pycache__
 .vscode
-algoTrader/algorithms/mrr.txt
+algoTrader/algorithms/study_templates
 testing.py
 dash_main2.py
 __pycache__

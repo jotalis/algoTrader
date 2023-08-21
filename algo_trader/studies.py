@@ -1,18 +1,85 @@
-import talib
+import talib, math
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 
-def get_mrr(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
-    mrr_data = calc_mrr(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals, invert)
+
+# ~~~HMA~~~
+def get_DMI(fig, row, df, timeperiod = 20):
+    dmi_data = calc_DMI(df, timeperiod)
+    posDI, negDI = dmi_data [0]['posDI'], dmi_data[0]['negDI']
+    
+    fig.add_trace(go.Scatter(x=posDI['date'],y=posDI['posDI'], name = "posDI", line={"color" : "#70DB93"}), row=row, col = 1)
+    fig.add_trace(go.Scatter(x=negDI['date'],y=negDI['negDI'], name = "negDI", line={"color" : "#ff5349"}), row=row, col = 1)
+
+
+def calc_DMI(df, timeperiod = 20):
+    dates = df['date']
+    high = np.array(df["high"])
+    low = np.array(df["low"])
+    close = np.array(df["close"])
+    
+    # Calculate DMI
+    posDI = talib.PLUS_DI(high, low, close, timeperiod = timeperiod)
+    negDI = talib.MINUS_DI(high, low, close, timeperiod = timeperiod)
+
+    # Combine with date column 
+    posDI_df = pd.DataFrame({'date': dates, 'posDI': posDI})
+    negDI_df = pd.DataFrame({'date': dates, 'negDI': negDI})
+
+    # Remove Nan values
+    posDI_df = posDI_df.dropna(subset = ['posDI']).reset_index(drop=True)
+    negDI_df = negDI_df.dropna(subset = ['negDI']).reset_index(drop=True)
+
+    return [{
+        'posDI' : posDI_df,
+        'negDI' : negDI_df
+        }]
+
+# ~~~DMI~~~
+def get_HMA(fig, row, df, timeperiod = 14):
+    
+    hma_data = calc_HMA(df, timeperiod)
+    hma_data = hma_data[0]['HMA']
+    hma_increasing = hma_data.loc[hma_data['trends'] == 1]
+    hma_decreasing = hma_data.loc[hma_data['trends'] == -1]
+    fig.add_trace(go.Scatter(x= hma_data['date'], y=hma_data['HMA'], name = "HMA decreasing", showlegend = True, line={"color" : "#ff5349"}), row=row, col = 1)
+    fig.add_trace(go.Scatter(x=hma_data['date'],y=hma_data['HMA'].where(hma_data['trends'] == 1), name = "HMA increasing", line={"color" : "#70DB93"}), row=row, col = 1)
+    # fig.add_trace(go.Scatter(x= hma_data['date'], y=hma_data['HMA'].where(hma_data['trends'] == -1), name = "HMA decreasing", line={"color" : "#ff5349"}), row=row, col = 1)
+
+
+def calc_HMA(df, timeperiod = 14):
+    dates = df['date']
+    close = df['close']
+
+    # Calculate HMA
+    hma = (talib.WMA(2 * talib.WMA(close, timeperiod = timeperiod//2) - talib.WMA(close, timeperiod = timeperiod),int(math.sqrt(timeperiod))))
+    
+    # Determine trend (increasing / decreasing)
+    # print(len(hma))
+    diffs = np.diff(hma)
+    diffs = np.insert(diffs, 0, 0)
+    # print("diffs", len(diffs))
+    trends = np.where(diffs > 0, 1, -1)
+
+
+    # Combine with date and trend columns and remove NaN values
+    
+    hma_df = pd.DataFrame({'date': dates, 'trends': trends, 'HMA': hma})
+    hma_df = hma_df.dropna(subset = ['HMA']).reset_index(drop=True)
+
+    return [{
+        'HMA' : hma_df
+        }]
+
+# ~~~MRR~~~
+def get_MRR(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
+    mrr_data = calc_MRR(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals, invert)
     plots, up_cross, down_cross = mrr_data[0], mrr_data[1]['up_cross_signals'], mrr_data[1]['down_cross_signals']
 
     # Plot average, level_up, level_down
-    fig.add_traces([go.Scatter(x=plots[x]['date'],y=plots[x]['close'], name = x, showlegend = True) for x in plots], rows=row, cols = 1)
+    fig.add_traces([go.Scatter(x=plots[x]['date'],y=plots[x]['close'], name = x) for x in plots], rows=row, cols = 1)
     
-    # Ensure all graphs share the same x axis
-    # fig.update_traces(xaxis = "x" + str(row))
-
     # Plot arrows
     for idx in up_cross:
         fig.add_annotation(
@@ -46,7 +113,7 @@ def get_mrr(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageTyp
             )
 
 
-def calc_mrr(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
+def calc_MRR(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
     
     # Get specified data of candlestick
     data = df[averagePrice]

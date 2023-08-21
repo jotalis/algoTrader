@@ -7,11 +7,10 @@ CONTRACTS = {
 }
 
 TIME_INTERVALS = [
+    '1 min',
     '5 mins',
     '15 mins',
     '30 mins',
-    '1 min',
-    '5 secs'
 ]
 
 NUM_BARS = 150

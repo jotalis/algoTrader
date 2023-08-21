@@ -6,17 +6,14 @@ import time
 
 # Callback function
 def on_new_bar(bars, hasNewBar):
-    print("helo")
-    print(bars)
-    print(hasNewBar)
     if hasNewBar:
-        util.df(bars).tail(1).to_csv('data/' + requested_contract + '.csv',
+        util.df(bars).tail(1).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv',
                                     mode = 'a', index=False, header = False)
 
 # Default Contract
 requested_contract = 'MES'
 duration = '1 D'
-bar_size = '5 mins'
+bar_size = '1 min'
 rth = False
 
 ib = IB()
@@ -34,9 +31,8 @@ bars = ib.reqHistoricalData(contract = constants.CONTRACTS[requested_contract],
     endDateTime = '',durationStr =  duration, barSizeSetting= bar_size,
     whatToShow = 'BID', useRTH = rth, formatDate = 1, 
     keepUpToDate = True)
-
 # Save to corresponding csv file
-df = util.df(bars).to_csv('data/' + requested_contract + '.csv', index=False)
+df = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
 
 # Update calls callback function
 bars.updateEvent+= on_new_bar
@@ -60,6 +56,6 @@ while True:
             whatToShow = 'BID', useRTH = rth, formatDate = 1, 
             keepUpToDate = True)
         try:
-            df = util.df(bars).to_csv('data/' + requested_contract + '.csv', index=False)
+            df = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
         except:
             df = None

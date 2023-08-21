@@ -1,7 +1,7 @@
 from dash import Dash, html, dcc, Output, Input, State
 import pandas as pd
 from algo_trader import constants
-from algo_trader.studies import mrr
+from algo_trader.studies import *
 import plotly.graph_objects as go
 from algo_trader.chart_helpers import *
 
@@ -63,7 +63,7 @@ app.layout = dbc.Container(
                                 dcc.Dropdown(id = 'bar_size',
                                     options = constants.TIME_INTERVALS,
                                     clearable = False,
-                                    value = '5 mins',
+                                    value = '1 min',
                                     style = {"float": "right", "width": "10vw", "font-weight": "bold"}
                                 ),
                             ],  
@@ -99,6 +99,7 @@ app.layout = dbc.Container(
                                 {"label": html.Span("MRR", style={"font-size": 15, "padding-left": 5}), "value": "MRR"},
                                 {"label": html.Span("MRR-INV", style={"font-size": 15, "padding-left": 5}), "value": "MRR-INV"},
                                 {"label": html.Span("DMI", style={"font-size": 15, "padding-left": 5}), "value": "DMI"},
+                                {"label": html.Span("HMA", style={"font-size": 15, "padding-left": 5}), "value": "HMA"},
                             ]
                         ),
                     ])
