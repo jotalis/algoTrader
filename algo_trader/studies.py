@@ -37,7 +37,6 @@ def calc_DMI(df, timeperiod = 20):
 
 # ~~~HMA~~~
 def get_HMA(fig, row, df, timeperiod = 14):
-    
     hma_data = calc_HMA(df, timeperiod)
     hma_data = hma_data[0]['HMA']
     fig.add_trace(go.Scatter(x= hma_data['date'], y=hma_data['HMA'], name = "HMA decreasing", showlegend = True, line={"color" : "#ff5349"}), row=row, col = 1)

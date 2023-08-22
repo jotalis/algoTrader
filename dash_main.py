@@ -92,8 +92,7 @@ app.layout = dbc.Container(
                 [
                     dbc.CardHeader(html.H2("BOT DASHBOARD", className="card-text")),
                     dbc.CardBody([
-                        html.P("$156,789", className="card-text"),
-                        html.P("+12.5% from last week", className="card-text"),
+                        html.H5("Select Studies", className="card-text"),
                         dbc.Checklist(
                             id = "studies_checklist",
                             options = [

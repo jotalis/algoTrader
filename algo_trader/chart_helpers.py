@@ -5,7 +5,7 @@ from algo_trader.studies import *
 def get_fig(df, studies):
     row = 1
     num_studies = len(studies) if studies else 0
-    fig = make_subplots(rows = 1 + num_studies, cols = 1, shared_xaxes=True, vertical_spacing=0.01, y_title='USD')
+    fig = make_subplots(rows = 1 + num_studies, cols = 1, shared_xaxes=True, vertical_spacing=0.01)
     
     get_candlebar(fig, row, df)
     if studies:
@@ -36,4 +36,5 @@ def get_candlebar(fig, row, df):
         hoverlabel = dict(namelength = 0),
         )
     fig.add_trace(candlebar, row = row, col = 1)
+    fig.update_yaxes(row = row, col = 1, title = "CNDLBAR")
     return candlebar
