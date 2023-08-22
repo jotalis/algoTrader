@@ -27,7 +27,7 @@ while True:
         with open("contract_request.txt", "r") as file:
             requested_contract = file.readline().strip()
             requested_bar_size = file.readline().strip()
-            file.close()
+            
         os.remove("contract_request.txt")
         if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False # Use live market data for futures
         else: ib.reqMarketDataType(3); rth = True # Use delayed and real time trading hour data for stocks
@@ -50,3 +50,10 @@ while True:
                                         mode = 'a', index=False, header = False)
     except:
         pass
+    account_summary = ib.accountSummary()
+    for x in account_summary:
+        if x.tag == "CashBalance" and x.currency == "USD":
+            with open("account_data.txt", "w") as file:
+                file.write(x.value)
+
+    

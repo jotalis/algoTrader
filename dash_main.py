@@ -19,15 +19,16 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 app.layout = dbc.Container(
     children = [
         dcc.Interval(id = 'graph_update', interval = 20000, n_intervals = 0),
+        dcc.Interval(id = 'account_summary_update', interval = 5000, n_intervals = 0),
         dcc.Store(id='scroll-zoom-store', data=True),
         dbc.Row([
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", className="card-text")),
+                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", className="card-text", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
-                        html.P("$156,789", className="card-text"),
-                        html.P("+12.5% from last week", className="card-text"),
+                        html.H4("BALANCE:", className="card-text", ),
+                        html.Strong(id = 'account_balance', className="card-text"),
                     ])
                 ],
                 color="#202A44",
@@ -36,7 +37,7 @@ app.layout = dbc.Container(
                 ),
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("OPEN POSITIONS", className="card-text")),
+                    dbc.CardHeader(html.H2("OPEN POSITIONS", className="card-text", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.P("$156,789", className="card-text"),
                         html.P("+12.5% from last week", className="card-text"),
@@ -90,17 +91,12 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("BOT DASHBOARD", className="card-text")),
+                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", className="card-text", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
-                        html.H5("Select Studies", className="card-text"),
+                        html.H4("Select Studies", className="card-text"),
                         dbc.Checklist(
                             id = "studies_checklist",
-                            options = [
-                                {"label": html.Span("MRR", style={"font-size": 15, "padding-left": 5}), "value": "MRR"},
-                                {"label": html.Span("MRR-INV", style={"font-size": 15, "padding-left": 5}), "value": "MRR-INV"},
-                                {"label": html.Span("DMI", style={"font-size": 15, "padding-left": 5}), "value": "DMI"},
-                                {"label": html.Span("HMA", style={"font-size": 15, "padding-left": 5}), "value": "HMA"},
-                            ]
+                            options = constants.STUDIES
                         ),
                     ])
                 ],
@@ -110,10 +106,13 @@ app.layout = dbc.Container(
                 ),
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("Bot Console")),
+                    dbc.CardHeader(html.H2("BOT DASHBOARD")),
                     dbc.CardBody([
-                        html.P("$156,789"),
-                        html.P("+12.5% from last week", className="card-text"),
+                        html.H4("SELECT STUDIES (2 MAX)"),
+                        dbc.Checklist(
+                            id = "bot_studies",
+                            options = constants.STUDIES
+                        ),
                     ]),
                 ],
                 color="#202A44",
@@ -129,7 +128,8 @@ app.layout = dbc.Container(
     
 )
 
-# Define app callbacks
+# ~~~Define app callbacks~~~
+# Graph Callback
 @app.callback(
     Output('graph_subplots', 'figure'), 
     [Input('contract_dropdown','value'),
@@ -138,9 +138,7 @@ app.layout = dbc.Container(
      Input('graph_update', 'n_intervals')],
      State('graph_subplots', 'figure')
 )
-
-# Update Function
-def display_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
+def update_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
     global df, contract, bar_size
     
     # Contract or bar size changed
@@ -152,7 +150,6 @@ def display_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
         with open("contract_request.txt", "w") as file:
             file.write(new_contract + '\n')
             file.write(new_bar_size)
-            file.close()
         contract = new_contract
         bar_size = new_bar_size
 
@@ -164,6 +161,36 @@ def display_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
     df = pd.read_csv('data/' + new_contract + '.csv')
     fig = get_fig(df, new_studies)
     return fig
+
+# Account Summary Callback
+@app.callback(
+    Output('account_balance', 'children'),
+    Input('account_summary_update', 'n_intervals')
+)
+def update_account_summary(intervals):
+    if os.path.exists("account_data.txt"):
+        with open("account_data.txt", "r") as file:
+            balance = file.readline().strip()
+    return '$' + balance
+
+# Bot Dropdown Callback
+@app.callback(
+    Output('bot_studies', 'options'),
+    Input('bot_studies', 'value'),
+    prevent_initial_call=True
+)
+def update_bot_dropdown(value):
+    options = constants.STUDIES
+    if len(value) >= 2:
+        options = [
+            {
+                "label": option["label"],
+                "value": option["value"],
+                "disabled": option["value"] not in value,
+            }
+            for option in options
+        ]
+    return options
 
 # Update scroll zoom
 app.clientside_callback(
