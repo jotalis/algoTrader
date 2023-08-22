@@ -4,18 +4,21 @@ from algo_trader import constants
 from algo_trader.studies import *
 import plotly.graph_objects as go
 from algo_trader.chart_helpers import *
-
+import os
 import dash_bootstrap_components as dbc
 
 # Default Contract
+df = ''
 contract = '' 
 bar_size = ''
+
 # Initialize Dash App
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
+# Build Dash Layout
 app.layout = dbc.Container(
     children = [
-        dcc.Interval(id = 'graph_update', interval = 500, n_intervals = 0),
+        dcc.Interval(id = 'graph_update', interval = 20000, n_intervals = 0),
         dcc.Store(id='scroll-zoom-store', data=True),
         dbc.Row([
             dbc.Col([
@@ -69,7 +72,6 @@ app.layout = dbc.Container(
                             ],  
                         )]
                     ),
-
                     dbc.CardBody([
                         dcc.Graph(
                             id="graph_subplots",
@@ -85,7 +87,6 @@ app.layout = dbc.Container(
             ],
             width = {'size': 8, 'order': 2}),
 
-            
             dbc.Col([
                 dbc.Card(
                 [
@@ -129,7 +130,6 @@ app.layout = dbc.Container(
     
 )
 
-
 # Define app callbacks
 @app.callback(
     Output('graph_subplots', 'figure'), 
@@ -137,29 +137,41 @@ app.layout = dbc.Container(
      Input('bar_size', 'value'),
      Input('studies_checklist', 'value'),
      Input('graph_update', 'n_intervals')],
-
+     State('graph_subplots', 'figure')
 )
 
 # Update Function
-def display_graphs(new_contract, new_bar, studies, intervals):
+def display_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
     global df, contract, bar_size
-    if new_contract != contract or new_bar != bar_size: # Contract Changed
+    
+    # Contract or bar size changed
+    if (new_contract != contract or new_bar_size != bar_size):    
+        # Get last modification date of data file
+        last_modified = os.path.getmtime('data/' + new_contract + '.csv')
+        
+        # Request new data
         with open("contract_request.txt", "w") as file:
             file.write(new_contract + '\n')
-            file.write(new_bar)
+            file.write(new_bar_size)
             file.close()
         contract = new_contract
-        bar_size = new_bar
+        bar_size = new_bar_size
 
+        # Check if data file has been updated     
+        while last_modified >= os.path.getmtime('data/' + new_contract + '.csv'):
+            time.sleep(0.1)
+
+    # Update figure
     df = pd.read_csv('data/' + new_contract + '.csv')
-    fig = get_fig(df, studies)
-       
+    fig = get_fig(df, new_studies)
     return fig
 
+# Update scroll zoom
 app.clientside_callback(
     """function(scrollZoomState) {return {'scrollZoom': true};}""",
     Output('graph_subplots', 'config'),
     Input('scroll-zoom-store', 'data')
 )
-app.run(debug=True)
+
+app.run(debug = True)
 

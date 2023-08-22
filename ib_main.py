@@ -2,18 +2,11 @@ from ib_insync import *
 from algo_trader import constants
 import pandas as pd
 import os
-import time
-
-# Callback function
-def on_new_bar(bars, hasNewBar):
-    if hasNewBar:
-        util.df(bars).tail(1).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv',
-                                    mode = 'a', index=False, header = False)
 
 # Default Contract
-requested_contract = 'MES'
+contract = ''
+bar_size = ''
 duration = '1 D'
-bar_size = '1 min'
 rth = False
 
 ib = IB()
@@ -24,38 +17,36 @@ while not ib.isConnected():
     ib.sleep(0.01)
 print("Connected to TWS")
 
-# Request Real Time Market Data (1 = live, 3 = delayed)
-ib.reqMarketDataType(1) 
-
-bars = ib.reqHistoricalData(contract = constants.CONTRACTS[requested_contract],
-    endDateTime = '',durationStr =  duration, barSizeSetting= bar_size,
-    whatToShow = 'BID', useRTH = rth, formatDate = 1, 
-    keepUpToDate = True)
-# Save to corresponding csv file
-df = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
-
-# Update calls callback function
-bars.updateEvent+= on_new_bar
-
+bars = 0
 while True:
     # Updates IB-Insync loop
-    ib.sleep(0.01)
+    ib.sleep(0.1)
+
     # Check for new contract request
     if os.path.exists("contract_request.txt"):
         with open("contract_request.txt", "r") as file:
             requested_contract = file.readline().strip()
-            bar_size = file.readline().strip()
+            requested_bar_size = file.readline().strip()
             file.close()
         os.remove("contract_request.txt")
+        if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False # Use live market data for futures
+        else: ib.reqMarketDataType(3); rth = True # Use delayed and real time trading hour data for stocks
 
-    if requested_contract != bars.contract.symbol or bar_size != bars.barSizeSetting:
-        if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False
-        else: ib.reqMarketDataType(3); rth = True
+        # Request data from IBKR
         bars = ib.reqHistoricalData(contract = constants.CONTRACTS[requested_contract],
-            endDateTime = '',durationStr = duration, barSizeSetting = bar_size,
+            endDateTime = '',durationStr = duration, barSizeSetting = requested_bar_size,
             whatToShow = 'BID', useRTH = rth, formatDate = 1, 
             keepUpToDate = True)
-        try:
-            df = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
-        except:
-            df = None
+        
+        # Save data up to current time 
+        df = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
+
+    # Continously save new rows of incoming data
+    try:
+        file_length = len(pd.read_csv('data/' + requested_contract + '.csv'))
+        bars_length = len(bars)
+        if bars_length > file_length:
+            util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length).to_csv('data/' + requested_contract + '.csv',
+                                        mode = 'a', index=False, header = False)
+    except:
+        pass
