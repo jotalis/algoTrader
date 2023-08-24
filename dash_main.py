@@ -8,7 +8,7 @@ import os
 import dash_bootstrap_components as dbc
 
 # Default Contract
-df = ''
+df = None
 contract = '' 
 bar_size = ''
 
@@ -25,7 +25,7 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", className="card-text", style = {'text-decoration' : 'underline'})),
+                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.H4("BALANCE:", className="card-text", ),
                         html.Strong(id = 'account_balance', className="card-text"),
@@ -37,7 +37,7 @@ app.layout = dbc.Container(
                 ),
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("OPEN POSITIONS", className="card-text", style = {'text-decoration' : 'underline'})),
+                    dbc.CardHeader(html.H2("OPEN POSITIONS", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.P("$156,789", className="card-text"),
                         html.P("+12.5% from last week", className="card-text"),
@@ -91,7 +91,7 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", className="card-text", style = {'text-decoration' : 'underline'})),
+                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.H4("Select Studies", className="card-text"),
                         dbc.Checklist(
@@ -106,13 +106,24 @@ app.layout = dbc.Container(
                 ),
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("BOT DASHBOARD")),
+                    dbc.CardHeader(html.H2("BOT DASHBOARD",  style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
-                        html.H4("SELECT STUDIES (2 MAX)"),
-                        dbc.Checklist(
-                            id = "bot_studies",
-                            options = constants.STUDIES
-                        ),
+                        html.Div(children = [                        
+                            html.H4("SELECT STUDIES (2 MAX)"),
+                            dbc.Checklist(
+                                id = "bot_studies",
+                                options = constants.STUDIES
+                            ),
+                        ]),
+                        html.Div(
+                            style = {'margin-top' : '15px'},
+                            children = [
+                            html.H4("RUN BOT (STATUS: STOPPED)", id = 'bot_status'),
+                            # dbc.Button("STOP", color="danger", className="mb-3 mr-3", style = {'margin-right' : '15px' ,'width' :'5vw'}),
+                            dbc.Button("START", n_clicks = 0, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'})
+                        ]),
+
+
                     ]),
                 ],
                 color="#202A44",
@@ -173,24 +184,34 @@ def update_account_summary(intervals):
             balance = file.readline().strip()
     return '$' + balance
 
-# Bot Dropdown Callback
+# Bot Dashboard Callback
 @app.callback(
+    Output('run_bot_button', 'color'),
+    Output('run_bot_button', 'children'),
+    Output("bot_status", "children"),
     Output('bot_studies', 'options'),
-    Input('bot_studies', 'value'),
+    [Input("run_bot_button", "n_clicks"),
+     Input('bot_studies', 'value'),],
+    State('run_bot_button', 'color'),
+    State('run_bot_button', 'children'),
+    State("bot_status", "children"),
     prevent_initial_call=True
 )
-def update_bot_dropdown(value):
+def update_bot_dashboard(n_clicks, value, button_color, button_text, status):
     options = constants.STUDIES
-    if len(value) >= 2:
+    is_odd_click = n_clicks % 2 == 1
+
+    if (value and len(value) == 2) or is_odd_click:
         options = [
-            {
-                "label": option["label"],
-                "value": option["value"],
-                "disabled": option["value"] not in value,
-            }
-            for option in options
+            {"label": option["label"], "value": option["value"], "disabled": option["value"] not in value}
+            for option in constants.STUDIES
         ]
-    return options
+
+    button_color = 'warning' if is_odd_click else 'success'
+    button_text = 'CANCEL' if is_odd_click else 'START'
+    status = f'RUN BOT (STATUS: {"RUNNING" if is_odd_click else "STOPPED"})'
+
+    return [button_color, button_text, status, options]
 
 # Update scroll zoom
 app.clientside_callback(
@@ -198,6 +219,7 @@ app.clientside_callback(
     Output('graph_subplots', 'config'),
     Input('scroll-zoom-store', 'data')
 )
+
 
 app.run(debug = True)
 
