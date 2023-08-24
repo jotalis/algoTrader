@@ -112,15 +112,22 @@ app.layout = dbc.Container(
                             html.H4("SELECT STUDIES (2 MAX)"),
                             dbc.Checklist(
                                 id = "bot_studies",
-                                options = constants.STUDIES
+                                options = constants.STUDIES,
+                                value=[],
                             ),
                         ]),
                         html.Div(
                             style = {'margin-top' : '15px'},
                             children = [
                             html.H4("RUN BOT (STATUS: STOPPED)", id = 'bot_status'),
-                            # dbc.Button("STOP", color="danger", className="mb-3 mr-3", style = {'margin-right' : '15px' ,'width' :'5vw'}),
-                            dbc.Button("START", n_clicks = 0, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'})
+                            dbc.Button("START", n_clicks = 1, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'}),
+                            dbc.Alert(
+                                "Please select atleast one study",
+                                id="bot-erorr-alert",
+                                is_open=False,
+                                color = 'danger',
+                                duration=3000,
+                            ),
                         ]),
 
 
@@ -185,33 +192,46 @@ def update_account_summary(intervals):
     return '$' + balance
 
 # Bot Dashboard Callback
+prev_clicks, bot_running = 0, False
 @app.callback(
     Output('run_bot_button', 'color'),
     Output('run_bot_button', 'children'),
     Output("bot_status", "children"),
     Output('bot_studies', 'options'),
+    Output("bot-erorr-alert", "is_open"),
     [Input("run_bot_button", "n_clicks"),
      Input('bot_studies', 'value'),],
     State('run_bot_button', 'color'),
     State('run_bot_button', 'children'),
+    State('bot_studies', 'options'),
     State("bot_status", "children"),
     prevent_initial_call=True
 )
-def update_bot_dashboard(n_clicks, value, button_color, button_text, status):
-    options = constants.STUDIES
-    is_odd_click = n_clicks % 2 == 1
+def update_bot_dashboard(n_clicks, value, button_color, button_text, options, status):
+    global prev_clicks, bot_running
+    clicked = n_clicks > prev_clicks
+    error_is_open = False
 
-    if (value and len(value) == 2) or is_odd_click:
+    if value:
+        # Start/Stop bot
+        if clicked:
+            bot_running = not bot_running
+
+        # Disable all studies if bot is running OR disable non-selected studies if max studies selected
         options = [
-            {"label": option["label"], "value": option["value"], "disabled": option["value"] not in value}
-            for option in constants.STUDIES
+            {"label": option["label"], "value": option["value"], "disabled": (bot_running and option["value"]) or (len(value) == 2 and option["value"] not in value)}
+            for option in options
         ]
-
-    button_color = 'warning' if is_odd_click else 'success'
-    button_text = 'CANCEL' if is_odd_click else 'START'
-    status = f'RUN BOT (STATUS: {"RUNNING" if is_odd_click else "STOPPED"})'
-
-    return [button_color, button_text, status, options]
+    else:
+        # Alert user to select atleast one study
+        error_is_open = True
+    # Update button
+    button_color = 'warning' if bot_running else 'success'; 
+    button_text = 'CANCEL' if bot_running else 'START'
+    status = f'RUN BOT (STATUS: {"RUNNING" if bot_running else "STOPPED"})'
+    prev_clicks = n_clicks
+    
+    return [button_color, button_text, status, options, error_is_open]
 
 # Update scroll zoom
 app.clientside_callback(
@@ -220,6 +240,4 @@ app.clientside_callback(
     Input('scroll-zoom-store', 'data')
 )
 
-
 app.run(debug = True)
-
