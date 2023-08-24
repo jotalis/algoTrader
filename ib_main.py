@@ -1,5 +1,6 @@
 from ib_insync import *
 from algo_trader import constants
+from algo_trader.ib_helpers import *
 import pandas as pd
 import os
 
@@ -9,6 +10,7 @@ bar_size = ''
 duration = '1 D'
 rth = False
 
+# Initialize IB-Insync
 ib = IB()
 ib.connect('127.0.0.1', 7497, 0)
 
@@ -17,7 +19,9 @@ while not ib.isConnected():
     ib.sleep(0.01)
 print("Connected to TWS")
 
-bars = 0
+# Cleanup files in directory
+cleanup_files()
+
 while True:
     # Updates IB-Insync loop
     ib.sleep(0.1)
@@ -50,6 +54,8 @@ while True:
                                         mode = 'a', index=False, header = False)
     except:
         pass
+
+    # Retrieve and send account data
     account_summary = ib.accountSummary()
     for x in account_summary:
         if x.tag == "CashBalance" and x.currency == "USD":

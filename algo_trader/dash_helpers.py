@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from algo_trader.studies import *
 
+
 def get_fig(df, studies):
     row = 1
     num_studies = len(studies) if studies else 0
@@ -23,6 +24,7 @@ def get_fig(df, studies):
     )
     fig.update_traces(xaxis="x"+str(row))
     fig.update_xaxes(rangeslider_visible = False, showspikes = True, spikemode = 'across')
+    fig.update_yaxes(fixedrange = True, autorange = True)
     return fig
 
 def get_candlebar(fig, row, df):

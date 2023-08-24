@@ -3,7 +3,7 @@ import pandas as pd
 from algo_trader import constants
 from algo_trader.studies import *
 import plotly.graph_objects as go
-from algo_trader.chart_helpers import *
+from algo_trader.dash_helpers import *
 import os
 import dash_bootstrap_components as dbc
 
@@ -76,7 +76,7 @@ app.layout = dbc.Container(
                     dbc.CardBody([
                         dcc.Graph(
                             id="graph_subplots",
-                            config={'displayModeBar': False},
+                            config={'displayModeBar': False,},
                             style={'height': '90vh'},
                         ),
                     ]),
@@ -102,7 +102,7 @@ app.layout = dbc.Container(
                 ],
                 color="#202A44",
                 className = 'mt-3 mb-3 text-light',
-                style = {'height': '48vh'}
+                style = {'height': '38vh'}
                 ),
                 dbc.Card(
                 [
@@ -119,8 +119,9 @@ app.layout = dbc.Container(
                         html.Div(
                             style = {'margin-top' : '15px'},
                             children = [
-                            html.H4("RUN BOT (STATUS: STOPPED)", id = 'bot_status'),
-                            dbc.Button("START", n_clicks = 1, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'}),
+                            html.H4("BOT STATUS: STOPPED", id = 'bot_status'),
+
+                            dbc.Button("START", n_clicks = 0, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'}),
                             dbc.Alert(
                                 "Please select atleast one study",
                                 id="bot-erorr-alert",
@@ -128,14 +129,30 @@ app.layout = dbc.Container(
                                 color = 'danger',
                                 duration=3000,
                             ),
-                        ]),
-
+                        ]),                       
+                        html.Div(
+                            style = {'margin-top' : '15px'},
+                            
+                            children = [
+                                html.H4("BOT CONSOLE", id = 'bot_console'),
+                                dbc.Card([
+                                    dbc.CardBody(
+                                        id = "bot_log",
+                                        children = []
+                                    )
+                                ],
+                                color = "dark",
+                                style = {'height': '25vh', "overflow-y": "scroll", "flex-direction": "column-reverse"},
+                                className = 'mb-3 text-light',
+                                )
+                            ]
+                        )
 
                     ]),
                 ],
                 color="#202A44",
                 className = 'mb-3 text-light',
-                style = {'height': '48vh'}
+                style = {'height': '58vh',}
                 ),
             ],
             width = {'size': 2, 'order': 3}),
@@ -199,27 +216,49 @@ prev_clicks, bot_running = 0, False
     Output("bot_status", "children"),
     Output('bot_studies', 'options'),
     Output("bot-erorr-alert", "is_open"),
+    Output("contract_dropdown", "disabled"),
+    Output("bar_size", "disabled"),
+    Output("bot_log", "children"),
     [Input("run_bot_button", "n_clicks"),
      Input('bot_studies', 'value'),],
     State('run_bot_button', 'color'),
     State('run_bot_button', 'children'),
     State('bot_studies', 'options'),
     State("bot_status", "children"),
+    State('contract_dropdown','value'),
+    State('bar_size', 'value'),
+    State("contract_dropdown", "disabled"),
+    State("bot_log", "children"),
     prevent_initial_call=True
 )
-def update_bot_dashboard(n_clicks, value, button_color, button_text, options, status):
+def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, options, status, contract, bar_size, dropdowns_disabled, bot_log):
     global prev_clicks, bot_running
     clicked = n_clicks > prev_clicks
     error_is_open = False
-
-    if value:
+    if selected_studies:
         # Start/Stop bot
         if clicked:
             bot_running = not bot_running
+            if bot_running:
+                # Disable dropdowns if bot is running
+                dropdowns_disabled = True
+                # Build bot log
+                bot_log.append(html.H6("> Bot started with contract " + contract + " and bar size " + bar_size + " and studies " + str(selected_studies)))
+                # Create bot run request and send configurations to ib_main
+                with open("bot_running.txt", "w") as file:
+                    file.write(contract + '\n')
+                    file.write(bar_size + '\n')
+                    for study in selected_studies:
+                        file.write(study + '\n')      
+            else:
+                # Enable dropdowns if bot is stopped
+                dropdowns_disabled = False
+                # Delete bot run request
+                os.remove("bot_running.txt")
 
         # Disable all studies if bot is running OR disable non-selected studies if max studies selected
         options = [
-            {"label": option["label"], "value": option["value"], "disabled": (bot_running and option["value"]) or (len(value) == 2 and option["value"] not in value)}
+            {"label": option["label"], "value": option["value"], "disabled": (bot_running and option["value"]) or (len(selected_studies) == 2 and option["value"] not in selected_studies)}
             for option in options
         ]
     else:
@@ -228,10 +267,10 @@ def update_bot_dashboard(n_clicks, value, button_color, button_text, options, st
     # Update button
     button_color = 'warning' if bot_running else 'success'; 
     button_text = 'CANCEL' if bot_running else 'START'
-    status = f'RUN BOT (STATUS: {"RUNNING" if bot_running else "STOPPED"})'
+    status = f'BOT STATUS: {"RUNNING" if bot_running else "STOPPED"}'
     prev_clicks = n_clicks
     
-    return [button_color, button_text, status, options, error_is_open]
+    return [button_color, button_text, status, options, error_is_open, dropdowns_disabled, dropdowns_disabled, bot_log]
 
 # Update scroll zoom
 app.clientside_callback(
