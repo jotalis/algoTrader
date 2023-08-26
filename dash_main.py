@@ -53,13 +53,16 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(
-                        [
-                        dcc.Dropdown(id = 'contract_dropdown',
-                            options = list(constants.CONTRACTS.keys()),
-                            value = 'MES',
-                            clearable = False,
-                            style = {"float": "left", "width": "10vw", "font-weight": "bold"}
+                    dbc.CardHeader([
+                        html.Div(
+                            children = [
+                                dcc.Dropdown(id = 'contract_dropdown',
+                                    options = list(constants.CONTRACTS.keys()),
+                                    value = 'MES',
+                                    clearable = False,
+                                    style = {"float": "left", "width": "10vw", "font-weight": "bold"}
+                                ),
+                            ]
                         ),
                         html.Div(
                             className = 'graph-top-right inline-block',
@@ -192,7 +195,7 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
 
         # Check if data file has been updated     
         while last_modified >= os.path.getmtime('data/' + new_contract + '.csv'):
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     # Update figure
     df = pd.read_csv('data/' + new_contract + '.csv')
@@ -254,7 +257,7 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
                     'studies': selected_studies
                 }
                 pickle.dump(auto_trade_config, open("bot_running.p", "wb"))
-                
+
             else:
                 # Enable dropdowns if bot is stopped
                 dropdowns_disabled = False

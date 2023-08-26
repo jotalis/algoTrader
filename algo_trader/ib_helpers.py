@@ -4,27 +4,50 @@ from algo_trader.studies import *
 def cleanup_files():
     if os.path.exists("bot_running.p"): os.remove("bot_running.p")
     if os.path.exists("contract_request.p"): os.remove("contract_request.p")
+    if os.path.exists("trade_order.p"): os.remove("trade_order.p")
+    if os.path.exists("account_data.txt"): os.remove("account_data.txt")
 
-def check_buy():
+def make_trade_order(order_action, contract, amount):
+    trade_order = {
+        'order_action': order_action,
+        'contract': contract,
+        'amount': amount
+    }
+    pickle.dump(trade_order, open("trade_order.p", "wb"))
+    
+    return trade_order
+
+def check_trade():
+    
+    # Whether the bot should make a trade
+    trade = False
+
     if os.path.exists("bot_running.p"):
         bot_request = pickle.load(open("bot_running.p", "rb"))
         contract = bot_request['contract']
-        bar_size = bot_request['bar_size']
         studies = bot_request['studies']
-        df = pd.read_csv("data/" + contract + ".csv")
-        current_index = len(df) - 1
-        for study in studies:
-            if study == 'DMI':  dmi = calc_DMI(df)
-            if dmi[1]['crosses'][-1] == current_index:
-                if dmi[1]['directions'][-1] == True:
-                    print("BUY")
-                else:
-                    print("SELL")
-            # if study == 'MRR': print(calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = False)[1]["up_cross_signals"])
-            # elif study == 'MRR-INV': calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = True)
-            # elif study == 'DMI': calc_DMI(df)
-            # elif study == 'HMA': calc_HMA(df)
-    
 
-def create_order():
-    pass
+        df = pd.read_csv("data/" + contract + ".csv")
+        
+
+        if len(studies) == 1:
+            study = studies[0]
+            if study == 'DMI': data = calc_DMI(df)
+            # elif study == 'MRR': data = calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = False)
+            # elif study == 'MRR-INV': data = calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = True)
+            # elif study == 'HMA': data = calc_HMA(df)
+
+            signal = data[1]['last_signal']
+            if signal['date'] == df['date'].iloc[-1]:
+                trade = True
+                if signal['order_action']: order_action = 'BUY'
+                else: order_action = 'SELL'
+        else:            
+            pass
+            # TODO - Add logic for multiple studies
+
+        # Create trade order to send to ib_main
+        if trade:
+            make_trade_order(order_action, contract, 1)
+
+    return trade

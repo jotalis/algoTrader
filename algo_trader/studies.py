@@ -33,13 +33,19 @@ def calc_DMI(df, timeperiod = 20):
     # Find indexes where lines cross  
     crosses = (np.where(np.diff(np.sign(posDI - negDI)) != 0)[0] + 1)
     directions= np.where(posDI[crosses] > negDI[crosses], True, False)
-   
+
+    # Get last signal
+    last_signal = {
+        "date" : dates[crosses[-1]],
+        "order_action" : directions[-1],
+    }
 
     return [{
         'posDI' : posDI_df,
         'negDI' : negDI_df
         },
         {
+        'last_signal': last_signal,
         'crosses': crosses,
         'directions': directions
         }]

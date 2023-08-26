@@ -32,7 +32,7 @@ while True:
         requested_contract = request['contract']
         requested_bar_size = request['bar_size']
         os.remove("contract_request.p")
-        
+
         if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False # Use live market data for futures
         else: ib.reqMarketDataType(3); rth = True # Use delayed and real time trading hour data for stocks
 
@@ -47,16 +47,45 @@ while True:
 
     # Continously save new rows of incoming data
     try:
-        file_length = len(pd.read_csv('data/' + requested_contract + '.csv'))
-        bars_length = len(bars)
+        bars_length, file_length = len(bars), len(pd.read_csv('data/' + requested_contract + '.csv'))
         if bars_length > file_length:
             util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length).to_csv('data/' + requested_contract + '.csv',
                                         mode = 'a', index=False, header = False)
-            #check_buy()
+            check_trade()
     except:
         pass
-    check_buy()
     
+    # Check for new trade request
+    # TODO - Check if position already exists with the same contract and amount ib.positions()
+    if os.path.exists("trade_order.p"):
+
+        # Create a new instance of IB-Insync for orders
+        ib_orders = IB()
+        ib_orders.connect('127.0.0.1', 7497, 0)
+        
+        # Get trade request details
+        trade_order = pickle.load(open("trade_order.p", "rb"))
+        order_action = trade_order['order_action']
+        contract = constants.CONTRACTS[trade_order['contract']]
+        amount = int(trade_order['amount'])
+        
+        print(type(contract))
+        
+        # Fill in missing contract details
+        ib_orders.qualifyContracts(contract)
+        
+        # Place order
+        order = MarketOrder(order_action, amount)
+        ib_orders.placeOrder(contract, order)
+        ib_orders.sleep(1)
+
+        while order.orderStatus.status != 'Filled':
+            ib_orders.sleep(0.05)
+
+        print("Order Filled")
+
+        ib_orders.disconnect()
+        os.remove("trade_order.p")
 
     # Retrieve and send account data
     account_summary = ib.accountSummary()
