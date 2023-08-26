@@ -33,6 +33,7 @@ def check_trade():
         if len(studies) == 1:
             study = studies[0]
             if study == 'DMI': data = calc_DMI(df)
+            # TODO: Add logic for other studies
             # elif study == 'MRR': data = calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = False)
             # elif study == 'MRR-INV': data = calc_MRR(df, levelsPeriod=21, levelsUpPercent=89, levelsDownPercent=10, invert = True)
             # elif study == 'HMA': data = calc_HMA(df)
@@ -44,7 +45,7 @@ def check_trade():
                 else: order_action = 'SELL'
         else:            
             pass
-            # TODO - Add logic for multiple studies
+            # TODO: Add logic for multiple studies
 
         # Create trade order to send to ib_main
         if trade:

@@ -54,7 +54,7 @@ while True:
             check_trade()
     except:
         pass
-    
+
     # Check for new trade request
     # TODO - Check if position already exists with the same contract and amount ib.positions()
     if os.path.exists("trade_order.p"):
@@ -65,6 +65,7 @@ while True:
         
         # Get trade request details
         trade_order = pickle.load(open("trade_order.p", "rb"))
+        os.remove("trade_order.p")
         order_action = trade_order['order_action']
         contract = constants.CONTRACTS[trade_order['contract']]
         amount = int(trade_order['amount'])
@@ -85,7 +86,7 @@ while True:
         print("Order Filled")
 
         ib_orders.disconnect()
-        os.remove("trade_order.p")
+        
 
     # Retrieve and send account data
     account_summary = ib.accountSummary()

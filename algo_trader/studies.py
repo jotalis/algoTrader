@@ -3,6 +3,22 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 
+"""
+~~~FUNCTIONS~~~
+
+void get_study(fig, row, df): 
+    Adds study to figure
+
+calc_study(df):
+    Calculates study
+    return [{
+        'data_used_for_graphing' : data_used_for_graphing, -> For building figure traces    
+        },
+        {
+        'last_signal': last_signal, -> For checking if a trade should be made
+        }]
+"""
+
 # ~~~DMI~~~
 def get_DMI(fig, row, df, timeperiod = 20):
     dmi_data = calc_DMI(df, timeperiod)
@@ -68,14 +84,21 @@ def calc_HMA(df, timeperiod = 14):
     diffs = np.diff(hma)
     diffs = np.insert(diffs, 0, 0)
     trends = np.where(diffs > 0, 1, -1)
-
+    print(trends)
     # Combine with date and trend columns and remove NaN values
-    
     hma_df = pd.DataFrame({'date': dates, 'trends': trends, 'HMA': hma})
     hma_df = hma_df.dropna(subset = ['HMA']).reset_index(drop=True)
 
+    # Get last signal
+    last_signal = {
+        'date' : dates.iloc[-1],
+        'order_action' : trends[-1] == 1
+    }
     return [{
         'HMA' : hma_df
+        },
+        {
+        'last_signal': last_signal
         }]
 
 # ~~~MRR~~~
@@ -162,12 +185,18 @@ def calc_MRR(df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA'
         up_cross_signals = up_cross[(up_directions & (up_cross > starting_index))]
         down_cross_signals = down_cross[(down_directions & (down_cross > starting_index))]
 
+    # Get last signal
+    last_signal = {
+        'date' : dates[up_cross[-1]] if up_cross[-1] > down_cross[-1] else dates[down_cross[-1]],
+        'order_action' : up_cross[-1] > down_cross[-1]
+    }
     return [{
         'average' :average_df,
         'level_up': level_up_df,
         'level_down' :level_down_df
         },
         {
+        'last_signal': last_signal,
         'up_cross_signals': up_cross_signals,
         'down_cross_signals': down_cross_signals
         }]
