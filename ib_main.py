@@ -2,7 +2,7 @@ from ib_insync import *
 from algo_trader import constants
 from algo_trader.ib_helpers import *
 import pandas as pd
-import os
+import os, pickle
 
 # Default Contract
 contract = ''
@@ -25,14 +25,14 @@ cleanup_files()
 while True:
     # Updates IB-Insync loop
     ib.sleep(0.1)
-
+    
     # Check for new contract request
-    if os.path.exists("contract_request.txt"):
-        with open("contract_request.txt", "r") as file:
-            requested_contract = file.readline().strip()
-            requested_bar_size = file.readline().strip()
-            
-        os.remove("contract_request.txt")
+    if os.path.exists("contract_request.p"):
+        request = pickle.load(open("contract_request.p", "rb"))
+        requested_contract = request['contract']
+        requested_bar_size = request['bar_size']
+        os.remove("contract_request.p")
+        
         if type(constants.CONTRACTS[requested_contract]) == Future: ib.reqMarketDataType(1); rth = False # Use live market data for futures
         else: ib.reqMarketDataType(3); rth = True # Use delayed and real time trading hour data for stocks
 
@@ -52,8 +52,11 @@ while True:
         if bars_length > file_length:
             util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length).to_csv('data/' + requested_contract + '.csv',
                                         mode = 'a', index=False, header = False)
+            #check_buy()
     except:
         pass
+    check_buy()
+    
 
     # Retrieve and send account data
     account_summary = ib.accountSummary()

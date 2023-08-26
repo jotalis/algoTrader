@@ -30,9 +30,18 @@ def calc_DMI(df, timeperiod = 20):
     posDI_df = posDI_df.dropna(subset = ['posDI']).reset_index(drop=True)
     negDI_df = negDI_df.dropna(subset = ['negDI']).reset_index(drop=True)
 
+    # Find indexes where lines cross  
+    crosses = (np.where(np.diff(np.sign(posDI - negDI)) != 0)[0] + 1)
+    directions= np.where(posDI[crosses] > negDI[crosses], True, False)
+   
+
     return [{
         'posDI' : posDI_df,
         'negDI' : negDI_df
+        },
+        {
+        'crosses': crosses,
+        'directions': directions
         }]
 
 # ~~~HMA~~~

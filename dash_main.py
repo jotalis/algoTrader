@@ -4,7 +4,7 @@ from algo_trader import constants
 from algo_trader.studies import *
 import plotly.graph_objects as go
 from algo_trader.dash_helpers import *
-import os
+import os, datetime, pickle
 import dash_bootstrap_components as dbc
 
 # Default Contract
@@ -182,9 +182,11 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
         last_modified = os.path.getmtime('data/' + new_contract + '.csv')
         
         # Request new data
-        with open("contract_request.txt", "w") as file:
-            file.write(new_contract + '\n')
-            file.write(new_bar_size)
+        new_request = {
+            'contract': new_contract,
+            'bar_size': new_bar_size
+        }
+        pickle.dump(new_request, open("contract_request.p", "wb"))
         contract = new_contract
         bar_size = new_bar_size
 
@@ -242,19 +244,24 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
             if bot_running:
                 # Disable dropdowns if bot is running
                 dropdowns_disabled = True
-                # Build bot log
-                bot_log.append(html.H6("> Bot started with contract " + contract + " and bar size " + bar_size + " and studies " + str(selected_studies)))
+                # Update bot log
+                bot_log.append(html.H6("> " + str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot started with contract " + contract + " and bar size " + bar_size + " and studies " + str(selected_studies)))
+                # bot_log.append(html.H6("> Current Time: " + ))
                 # Create bot run request and send configurations to ib_main
-                with open("bot_running.txt", "w") as file:
-                    file.write(contract + '\n')
-                    file.write(bar_size + '\n')
-                    for study in selected_studies:
-                        file.write(study + '\n')      
+                auto_trade_config = {
+                    'contract': contract,
+                    'bar_size': bar_size,
+                    'studies': selected_studies
+                }
+                pickle.dump(auto_trade_config, open("bot_running.p", "wb"))
+                
             else:
                 # Enable dropdowns if bot is stopped
                 dropdowns_disabled = False
+                # Update bot log
+                bot_log.append(html.H6("> " + str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot stopped"))
                 # Delete bot run request
-                os.remove("bot_running.txt")
+                os.remove("bot_running.p")
 
         # Disable all studies if bot is running OR disable non-selected studies if max studies selected
         options = [
