@@ -17,7 +17,7 @@ def make_trade_order(order_action, contract, amount):
     
     return trade_order
 
-def check_trade():
+def check_trade(ib):
     
     # Whether the bot should make a trade
     trade = False
@@ -48,7 +48,8 @@ def check_trade():
             # TODO: Add logic for multiple studies
 
         # Create trade order to send to ib_main
-        if trade:
+        positions = sum([v.position for v in ib.positions() if v.contract.symbol == contract])
+        if trade and ((positions >= 1 and order_action == 'SELL') or (positions <= -1 and order_action == 'BUY') or positions == 0):
             make_trade_order(order_action, contract, 1)
 
     return trade

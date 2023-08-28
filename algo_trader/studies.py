@@ -2,10 +2,9 @@ import talib, math, time
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-
+from algo_trader import constants
 """
 ~~~FUNCTIONS~~~
-
 void get_study(fig, row, df): 
     Adds study to figure
 
@@ -22,13 +21,16 @@ calc_study(df):
 # ~~~DMI~~~
 def get_DMI(fig, row, df, timeperiod = 20):
     dmi_data = calc_DMI(df, timeperiod)
-    posDI, negDI = dmi_data [0]['posDI'], dmi_data[0]['negDI']
-    
+    posDI, negDI = dmi_data[0]['posDI'], dmi_data[0]['negDI']
+
+    # Cut all plots to same num bars length
+    posDI, negDI = posDI.tail(constants.NUM_BARS), negDI.tail(constants.NUM_BARS)    
+
     fig.add_trace(go.Scatter(x=posDI['date'],y=posDI['posDI'], name = "posDI", line={"color" : "#70DB93"}), row=row, col = 1)
     fig.add_trace(go.Scatter(x=negDI['date'],y=negDI['negDI'], name = "negDI", line={"color" : "#ff5349"}), row=row, col = 1)
 
-
 def calc_DMI(df, timeperiod = 20):
+
     dates = df['date']
     high = np.array(df["high"])
     low = np.array(df["low"])
@@ -70,9 +72,13 @@ def calc_DMI(df, timeperiod = 20):
 def get_HMA(fig, row, df, timeperiod = 14):
     hma_data = calc_HMA(df, timeperiod)
     hma_data = hma_data[0]['HMA']
+
+    # Cut all plots to same num bars length
+    hma_data = hma_data.tail(constants.NUM_BARS)
+
     fig.add_trace(go.Scatter(x= hma_data['date'], y=hma_data['HMA'], name = "HMA decreasing", showlegend = True, line={"color" : "#ff5349"}), row=row, col = 1)
     fig.add_trace(go.Scatter(x=hma_data['date'],y=hma_data['HMA'].where(hma_data['trends'] == 1), name = "HMA increasing", line={"color" : "#70DB93"}), row=row, col = 1)
- 
+
 def calc_HMA(df, timeperiod = 14):
     dates = df['date']
     close = df['close']
@@ -84,7 +90,7 @@ def calc_HMA(df, timeperiod = 14):
     diffs = np.diff(hma)
     diffs = np.insert(diffs, 0, 0)
     trends = np.where(diffs > 0, 1, -1)
-    print(trends)
+
     # Combine with date and trend columns and remove NaN values
     hma_df = pd.DataFrame({'date': dates, 'trends': trends, 'HMA': hma})
     hma_df = hma_df.dropna(subset = ['HMA']).reset_index(drop=True)
@@ -104,30 +110,34 @@ def calc_HMA(df, timeperiod = 14):
 # ~~~MRR~~~
 def get_MRR(fig, row, df, averagePeriod = 14, averagePrice = 'close', averageType = 'SMA', levelsPeriod = 35, levelsUpPercent = 90, levelsDownPercent = 10, showSignals = True, invert = False):
     mrr_data = calc_MRR(df, averagePeriod, averagePrice, averageType, levelsPeriod, levelsUpPercent, levelsDownPercent, showSignals, invert)
-    plots, up_cross, down_cross = mrr_data[0], mrr_data[1]['up_cross_signals'], mrr_data[1]['down_cross_signals']
+    plots, up_cross, down_cross = mrr_data[0], mrr_data[1]['up_cross_signals']-(levelsPeriod+averagePeriod-2), mrr_data[1]['down_cross_signals']-(levelsPeriod+averagePeriod-2)
+
+    # Cut all plots to same num bars length
+    for x in plots: plots[x] = plots[x].tail(constants.NUM_BARS)
+    up_cross, down_cross = up_cross[up_cross > plots['average'].index[0]], down_cross[down_cross > plots['average'].index[0]]
 
     # Plot average, level_up, level_down
     fig.add_traces([go.Scatter(x=plots[x]['date'],y=plots[x][averagePrice], name = x) for x in plots], rows=row, cols = 1)
 
     # Plot arrows
     annotations =   [
-             dict(x=df['date'][idx], 
-                y=plots['average'][averagePrice][idx-(levelsPeriod+averagePeriod-2)],
+             dict(x=plots['average']['date'][idx], 
+                y=plots['average'][averagePrice][idx],
                 yref="y"+str(row), 
                 text="UP", showarrow=True, 
                 font=dict(family="Courier New, monospace", size=16, color="#40826D"), 
                 arrowhead=2, arrowsize=1, arrowwidth=3, arrowcolor="#009E60",
                 ax=0, ay=-30,
-                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#C1E1C1") for idx in up_cross
+                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#C1E1C1") for idx in up_cross 
                     ] + [
-            dict(x=df['date'][idx], 
-                y=plots['average'][averagePrice][idx-(levelsPeriod+averagePeriod-2)],
+            dict(x=plots['average']['date'][idx], 
+                y=plots['average'][averagePrice][idx],
                 yref="y"+str(row), 
                 text="DOWN", showarrow=True, 
                 font=dict(family="Courier New, monospace", size=16, color="#A40826"), 
                 arrowhead=2, arrowsize=1, arrowwidth=3, arrowcolor="#FF3131",
                 ax=0, ay=30,
-                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#E1C1C1") for idx in down_cross
+                bordercolor="#c7c7c7", borderwidth=2, borderpad=1, bgcolor="#E1C1C1") for idx in down_cross 
                     ]
     fig.update_layout(annotations =  fig['layout']['annotations']+tuple(annotations))
 

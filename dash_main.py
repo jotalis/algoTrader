@@ -28,7 +28,7 @@ app.layout = dbc.Container(
                     dbc.CardHeader(html.H2("ACCOUNT SUMMARY", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.H4("BALANCE:", className="card-text", ),
-                        html.Strong(id = 'account_balance', className="card-text"),
+                        html.Strong(children = "", id = 'account_balance', className="card-text"),
                     ])
                 ],
                 color="#202A44",
@@ -79,7 +79,7 @@ app.layout = dbc.Container(
                     dbc.CardBody([
                         dcc.Graph(
                             id="graph_subplots",
-                            config={'displayModeBar': False,},
+                            config={'displayModeBar': False},
                             style={'height': '90vh'},
                         ),
                     ]),
@@ -99,7 +99,8 @@ app.layout = dbc.Container(
                         html.H4("Select Studies", className="card-text"),
                         dbc.Checklist(
                             id = "studies_checklist",
-                            options = constants.STUDIES
+                            options = constants.STUDIES,
+                            value=[],
                         ),
                     ])
                 ],
@@ -173,10 +174,11 @@ app.layout = dbc.Container(
     [Input('contract_dropdown','value'),
      Input('bar_size', 'value'),
      Input('studies_checklist', 'value'),
-     Input('graph_update', 'n_intervals')],
+     Input('graph_update', 'n_intervals'),
+     Input('graph_subplots', 'relayoutData'),],
      State('graph_subplots', 'figure')
 )
-def update_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
+def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_data, fig):
     global df, contract, bar_size
     
     # Contract or bar size changed
@@ -195,19 +197,40 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, fig):
 
         # Check if data file has been updated     
         while last_modified >= os.path.getmtime('data/' + new_contract + '.csv'):
-            time.sleep(0.05)
+            time.sleep(0.1)
 
     # Update figure
-    df = pd.read_csv('data/' + new_contract + '.csv')
-    fig = get_fig(df, new_studies)
+    df = pd.read_csv('data/' + new_contract + '.csv')    
+    fig = get_fig((df.tail(constants.NUM_BARS + 100)).reset_index(drop=True), new_studies)
+
+    # Update xaxis number
+    axis = str(len(new_studies)+1) if new_studies else '' 
+    
+    # Set default axis range
+    xaxis_range = [0, constants.NUM_BARS]
+
+    # Set figure axis range if graph is zoomed 
+    if relayout_data and 'xaxis' + axis +'.range[0]' in relayout_data and 'xaxis' + axis +'.range[1]' in relayout_data:
+        x_min = max(relayout_data['xaxis' + axis +'.range[0]'], 0)
+        x_max = min(relayout_data['xaxis' + axis +'.range[1]'], constants.NUM_BARS)
+        xaxis_range = [x_min, x_max]
+    
+    # Update figure xaxis range
+    fig['layout']['xaxis'+ axis]['range'] = xaxis_range
+
+    # Update figure dragmode
+    if list(fig['layout']['xaxis'+ axis]['range']) != [0, constants.NUM_BARS]: fig['layout']['dragmode'] = 'pan'
+    else: fig['layout']['dragmode'] = 'zoom'
+
     return fig
 
 # Account Summary Callback
 @app.callback(
     Output('account_balance', 'children'),
-    Input('account_summary_update', 'n_intervals')
+    Input('account_summary_update', 'n_intervals'),
+    State('account_balance', 'children'),
 )
-def update_account_summary(intervals):
+def update_account_summary(intervals, balance):
     if os.path.exists("account_data.txt"):
         with open("account_data.txt", "r") as file:
             balance = file.readline().strip()
@@ -282,11 +305,4 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
     
     return [button_color, button_text, status, options, error_is_open, dropdowns_disabled, dropdowns_disabled, bot_log]
 
-# Update scroll zoom
-app.clientside_callback(
-    """function(scrollZoomState) {return {'scrollZoom': true};}""",
-    Output('graph_subplots', 'config'),
-    Input('scroll-zoom-store', 'data')
-)
-
-app.run(debug = True)
+app.run()
