@@ -1,6 +1,7 @@
 import os, pickle
 import pandas as pd
 from algo_trader.studies import *
+
 def cleanup_files():
     if os.path.exists("bot_running.p"): os.remove("bot_running.p")
     if os.path.exists("contract_request.p"): os.remove("contract_request.p")
@@ -28,7 +29,6 @@ def check_trade(ib):
         studies = bot_request['studies']
 
         df = pd.read_csv("data/" + contract + ".csv")
-        
 
         if len(studies) == 1:
             study = studies[0]
@@ -50,6 +50,6 @@ def check_trade(ib):
         # Create trade order to send to ib_main
         positions = sum([v.position for v in ib.positions() if v.contract.symbol == contract])
         if trade and ((positions >= 1 and order_action == 'SELL') or (positions <= -1 and order_action == 'BUY') or positions == 0):
-            make_trade_order(order_action, contract, 1)
-
+            make_trade_order(order_action, contract, abs(positions)+ 1)
+            
     return trade

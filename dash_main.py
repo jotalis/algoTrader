@@ -180,11 +180,14 @@ app.layout = dbc.Container(
 )
 def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_data, fig):
     global df, contract, bar_size
-    
+
     # Contract or bar size changed
     if (new_contract != contract or new_bar_size != bar_size):    
         # Get last modification date of data file
-        last_modified = os.path.getmtime('data/' + new_contract + '.csv')
+        last_modified = time.time()
+        if os.path.exists('data/' + new_contract + '.csv'):
+            last_modified = os.path.getmtime('data/' + new_contract + '.csv')
+        
         
         # Request new data
         new_request = {
@@ -200,6 +203,9 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_d
             time.sleep(0.1)
 
     # Update figure
+    while not os.path.exists('data/' + new_contract + '.csv'):
+        time.sleep(0.1)
+
     df = pd.read_csv('data/' + new_contract + '.csv')    
     fig = get_fig((df.tail(constants.NUM_BARS + 100)).reset_index(drop=True), new_studies)
 
@@ -305,4 +311,4 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
     
     return [button_color, button_text, status, options, error_is_open, dropdowns_disabled, dropdowns_disabled, bot_log]
 
-app.run()
+app.run(debug = True)
