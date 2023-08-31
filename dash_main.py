@@ -25,28 +25,44 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
+                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", style = {'text-decoration' : 'underline'})),
+                    dbc.CardBody([
+                        html.H4("Select Studies", className="card-text"),
+                        dbc.Checklist(
+                            id = "studies_checklist",
+                            options = constants.STUDIES,
+                            value=[],
+                        ),
+                    ])
+                ],
+                color="#202A44",
+                className = 'mt-3 mb-3 text-light',
+                style = {'height': '48vh'}
+                ),  
+                dbc.Card(
+                [
                     dbc.CardHeader(html.H2("ACCOUNT SUMMARY", style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
-                        html.H4("BALANCE:", className="card-text", ),
-                        html.Strong(children = "", id = 'account_balance', className="card-text"),
+                        html.Div(
+                            children = [                        
+                            html.H4("BALANCE:", className="card-text", ),
+                            html.Strong(children = "", id = 'account_balance', className="card-text"),
+                        ]
+                        
+                        ),
+                        html.Div(
+                            style = {'margin-top' : '15px'},
+                            children = [                 
+                            html.H4("OPEN POSITIONS:", className="card-text", ),
+                            html.Strong(children = "", id = 'account_positions', className="card-text"),
+                        ]),
                     ])
                 ],
                 color="#202A44",
                 className = 'mt-3 mb-3 text-light',
                 style = {'height': '48vh'}
                 ),
-                dbc.Card(
-                [
-                    dbc.CardHeader(html.H2("OPEN POSITIONS", style = {'text-decoration' : 'underline'})),
-                    dbc.CardBody([
-                        html.P("$156,789", className="card-text"),
-                        html.P("+12.5% from last week", className="card-text"),
-                    ]),
-                ],
-                color="#202A44",
-                className = 'mb-3 text-light',
-                style = {'height': '48vh'}
-                ),
+       
             ],
             width = {'size': 2, 'order': 1}),
             
@@ -94,22 +110,6 @@ app.layout = dbc.Container(
             dbc.Col([
                 dbc.Card(
                 [
-                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", style = {'text-decoration' : 'underline'})),
-                    dbc.CardBody([
-                        html.H4("Select Studies", className="card-text"),
-                        dbc.Checklist(
-                            id = "studies_checklist",
-                            options = constants.STUDIES,
-                            value=[],
-                        ),
-                    ])
-                ],
-                color="#202A44",
-                className = 'mt-3 mb-3 text-light',
-                style = {'height': '38vh'}
-                ),
-                dbc.Card(
-                [
                     dbc.CardHeader(html.H2("BOT DASHBOARD",  style = {'text-decoration' : 'underline'})),
                     dbc.CardBody([
                         html.Div(children = [                        
@@ -146,7 +146,7 @@ app.layout = dbc.Container(
                                     )
                                 ],
                                 color = "dark",
-                                style = {'height': '25vh', "overflow-y": "scroll", "flex-direction": "column-reverse"},
+                                style = {'height': '65vh', "overflow-y": "scroll", "flex-direction": "column-reverse"},
                                 className = 'mb-3 text-light',
                                 )
                             ]
@@ -155,8 +155,8 @@ app.layout = dbc.Container(
                     ]),
                 ],
                 color="#202A44",
-                className = 'mb-3 text-light',
-                style = {'height': '58vh',}
+                className = 'mt-3 mb-3 text-light',
+                style = {'height': '96vh',}
                 ),
             ],
             width = {'size': 2, 'order': 3}),
