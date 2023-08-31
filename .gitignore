@@ -9,7 +9,6 @@ testing.py
 
 *.png
 *.csv
+*.txt
+*.p
 .vscode
-
-contract_request.txt
-bot_running.txt
