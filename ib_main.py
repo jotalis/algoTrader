@@ -96,6 +96,7 @@ while True:
             ib_orders.sleep(3)
 
             print("Order Filled")
+            write_to_console(order_action + " Order Filled for " + contract + " at " + datetime.now().strftime("%H:%M:%S"))
 
             ib_orders.disconnect()
             

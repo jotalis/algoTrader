@@ -4,6 +4,7 @@ from algo_trader import constants
 from algo_trader.studies import *
 import plotly.graph_objects as go
 from algo_trader.dash_helpers import *
+from algo_trader.ib_helpers import *
 import os, datetime, pickle
 import dash_bootstrap_components as dbc
 
@@ -20,6 +21,7 @@ app.layout = dbc.Container(
     children = [
         dcc.Interval(id = 'graph_update', interval = 20000, n_intervals = 0),
         dcc.Interval(id = 'account_summary_update', interval = 5000, n_intervals = 0),
+        dcc.Interval(id = 'console_update', interval = 500, n_intervals = 0),
         dcc.Store(id='scroll-zoom-store', data=True),
         dbc.Row([
             dbc.Col([
@@ -141,7 +143,7 @@ app.layout = dbc.Container(
                                 html.H4("BOT CONSOLE", id = 'bot_console'),
                                 dbc.Card([
                                     dbc.CardBody(
-                                        id = "bot_log",
+                                        id = "bot_console",
                                         children = []
                                     )
                                 ],
@@ -252,7 +254,6 @@ prev_clicks, bot_running = 0, False
     Output("bot-erorr-alert", "is_open"),
     Output("contract_dropdown", "disabled"),
     Output("bar_size", "disabled"),
-    Output("bot_log", "children"),
     [Input("run_bot_button", "n_clicks"),
      Input('bot_studies', 'value'),],
     State('run_bot_button', 'color'),
@@ -262,10 +263,9 @@ prev_clicks, bot_running = 0, False
     State('contract_dropdown','value'),
     State('bar_size', 'value'),
     State("contract_dropdown", "disabled"),
-    State("bot_log", "children"),
     prevent_initial_call=True
 )
-def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, options, status, contract, bar_size, dropdowns_disabled, bot_log):
+def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, options, status, contract, bar_size, dropdowns_disabled):
     global prev_clicks, bot_running
     clicked = n_clicks > prev_clicks
     error_is_open = False
@@ -277,7 +277,7 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
                 # Disable dropdowns if bot is running
                 dropdowns_disabled = True
                 # Update bot log
-                bot_log.append(html.H6("> " + str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot started with contract " + contract + " and bar size " + bar_size + " and studies " + str(selected_studies)))
+                write_to_console(str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot started with contract " + contract + " and bar size " + bar_size + " and studies " + str(selected_studies))
                 # bot_log.append(html.H6("> Current Time: " + ))
                 # Create bot run request and send configurations to ib_main
                 auto_trade_config = {
@@ -291,7 +291,7 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
                 # Enable dropdowns if bot is stopped
                 dropdowns_disabled = False
                 # Update bot log
-                bot_log.append(html.H6("> " + str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot stopped"))
+                write_to_console(str(datetime.datetime.now().strftime("%H:%M:%S")) + ": Bot stopped")
                 # Delete bot run request
                 os.remove("bot_running.p")
 
@@ -309,6 +309,20 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
     status = f'BOT STATUS: {"RUNNING" if bot_running else "STOPPED"}'
     prev_clicks = n_clicks
     
-    return [button_color, button_text, status, options, error_is_open, dropdowns_disabled, dropdowns_disabled, bot_log]
+    return [button_color, button_text, status, options, error_is_open, dropdowns_disabled, dropdowns_disabled]
+
+@app.callback(
+    Output('bot_console', 'children'),
+    Input('console_update', 'n_intervals'),
+    State('bot_console', 'children'),
+)
+
+def update_bot_console(intervals, console):
+    if os.path.exists("console.txt"):
+        with open("console.txt", "r") as file:
+            [console.append(html.H6("> " + line.strip())) for line in file.readlines()]
+        os.remove('console.txt')
+    return console
+
 
 app.run(debug = True)
