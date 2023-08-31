@@ -320,8 +320,8 @@ def update_bot_dashboard(n_clicks, selected_studies, button_color, button_text, 
 def update_bot_console(intervals, console):
     if os.path.exists("console.txt"):
         with open("console.txt", "r") as file:
-            [console.append(html.H6("> " + line.strip())) for line in file.readlines()]
-        os.remove('console.txt')
+            for num, line in enumerate(file.readlines()):
+                if line and len(console) < num+1: console.append(html.H6("> " + line.strip()))
     return console
 
 

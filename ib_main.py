@@ -57,19 +57,17 @@ while True:
             
 
         # Continously save new rows of incoming data
-        try:
-            bars_length = len(bars)
-            
-            if bars_length > file_length:
-                last_bar = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length)
-                last_bar.to_csv('data/' + requested_contract + '.csv', mode = 'a', index=False, header = False)
+        bars_length = len(bars)
+        
+        if bars_length > file_length:
+            last_bar = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length)
+            last_bar.to_csv('data/' + requested_contract + '.csv', mode = 'a', index=False, header = False)
 
-                file_length = bars_length
-                
-                print(datetime.now().strftime("%H:%M:%S"), "checked trade")
-                check_trade(ib)
-        except:
-            pass
+            file_length = bars_length
+            
+            write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": CHECKED TRADE")
+            if os.path.exists("contract_request.p"): check_trade(ib) # If bot is running check for trade
+
         
         # Check for new trade request
         if os.path.exists("trade_order.p"):
@@ -94,12 +92,10 @@ while True:
             order = MarketOrder(order_action, amount)
             trade = ib_orders.placeOrder(contract, order)
             ib_orders.sleep(3)
-
-            print("Order Filled")
-            write_to_console(order_action + " Order Filled for " + contract + " at " + datetime.now().strftime("%H:%M:%S"))
-
-            ib_orders.disconnect()
-            
+            filled_price = trade.orderStatus.avgFillPrice
+            print(filled_price)
+            write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": " + order_action + " ORDER FILLED FOR " + contract + " AT PRICE $" + str(filled_price))
+            ib_orders.disconnect() 
 
         # Retrieve and send account data
         account_summary = ib.accountSummary()

@@ -11,8 +11,8 @@ def cleanup_files():
 
 
 def write_to_console(text):
-    with open('console.txt', 'w') as f:
-        f.write(text)
+    with open('console.txt', 'a') as f:
+        f.write(text + '\n')
 
 def make_trade_order(order_action, contract, amount):
     trade_order = {
