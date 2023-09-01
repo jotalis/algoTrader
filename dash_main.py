@@ -21,7 +21,7 @@ app.layout = dbc.Container(
     children = [
         dcc.Interval(id = 'graph_update', interval = 20000, n_intervals = 0),
         dcc.Interval(id = 'account_summary_update', interval = 5000, n_intervals = 0),
-        dcc.Interval(id = 'console_update', interval = 500, n_intervals = 0),
+        dcc.Interval(id = 'console_update', interval = 1000, n_intervals = 0),
         dcc.Store(id='scroll-zoom-store', data=True),
         dbc.Row([
             dbc.Col([
@@ -48,7 +48,9 @@ app.layout = dbc.Container(
                         html.Div(
                             children = [                        
                             html.H4("BALANCE:", className="card-text", ),
-                            html.Strong(children = "", id = 'account_balance', className="card-text"),
+                            html.Strong(children = "0", id = 'account_balance', className="card-text"),
+                            html.Br(),
+                            html.Strong(children = "", id = 'account_pl', className="card-text" ),
                         ]
                         
                         ),
@@ -124,6 +126,16 @@ app.layout = dbc.Container(
                         ]),
                         html.Div(
                             style = {'margin-top' : '15px'},
+                            children = [                        
+                            html.H4("ADDITIONAL OPTIONS"),
+                            dbc.Checklist(
+                                id = "additional_options",
+                                options = constants.ADD_OPTIONS,
+                                value=[],
+                            ),
+                        ]),
+                        html.Div(
+                            style = {'margin-top' : '15px'},
                             children = [
                             html.H4("BOT STATUS: STOPPED", id = 'bot_status'),
 
@@ -178,9 +190,9 @@ app.layout = dbc.Container(
      Input('studies_checklist', 'value'),
      Input('graph_update', 'n_intervals'),
      Input('graph_subplots', 'relayoutData'),],
-     State('graph_subplots', 'figure')
+    #  State('graph_subplots', 'figure')
 )
-def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_data, fig):
+def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_data):
     global df, contract, bar_size
 
     # Contract or bar size changed
@@ -235,14 +247,16 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_d
 # Account Summary Callback
 @app.callback(
     Output('account_balance', 'children'),
+    Output('account_pl', 'children'),
     Input('account_summary_update', 'n_intervals'),
     State('account_balance', 'children'),
 )
-def update_account_summary(intervals, balance):
+def update_account_summary(intervals, account_balance):
     if os.path.exists("account_data.txt"):
         with open("account_data.txt", "r") as file:
             balance = file.readline().strip()
-    return '$' + balance
+        account_balance = '$' + balance
+    return [account_balance, 'P/L: $' + str(round(float(account_balance[1:]) - 103298.20, 2))]
 
 # Bot Dashboard Callback
 prev_clicks, bot_running = 0, False

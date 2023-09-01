@@ -1,10 +1,8 @@
-.vscode
 __pycache__
 algo_trader/__pycache__
 algo_trader/study_templates/
 
 tempCodeRunnerFile.py
-dash_main2.py
 testing.py
 
 *.png

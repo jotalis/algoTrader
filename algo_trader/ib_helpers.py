@@ -28,8 +28,7 @@ def check_trade(ib):
     
     # Whether the bot should make a trade
     trade = False
-
-    if os.path.exists("bot_running.p"):
+    try:
         bot_request = pickle.load(open("bot_running.p", "rb"))
         contract = bot_request['contract']
         studies = bot_request['studies']
@@ -57,5 +56,7 @@ def check_trade(ib):
         positions = sum([v.position for v in ib.positions() if v.contract.symbol == contract])
         if trade and ((positions >= 1 and order_action == 'SELL') or (positions <= -1 and order_action == 'BUY') or positions == 0):
             make_trade_order(order_action, contract, abs(positions)+ 1)
-            
+    except:
+        pass  
+    
     return trade

@@ -20,4 +20,9 @@ STUDIES = [
     {"label": html.Span("HMA", style={"font-size": 15, "padding-left": 5}), "value": "HMA"},
 ]
 
+ADD_OPTIONS = [
+
+    {"label": html.Span("EARLY EXIT", style={"font-size": 15, "padding-left": 5}), "value": "EARLY EXIT"},
+]
+
 NUM_BARS = 150

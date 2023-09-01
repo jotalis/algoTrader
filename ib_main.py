@@ -55,20 +55,20 @@ while True:
             df = util.df(bars)
             df.loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
             
-
-        # Continously save new rows of incoming data
-        bars_length = len(bars)
-        
-        if bars_length > file_length:
-            last_bar = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length)
-            last_bar.to_csv('data/' + requested_contract + '.csv', mode = 'a', index=False, header = False)
-
-            file_length = bars_length
+        try:
+            # Continously save new rows of incoming data
+            bars_length = len(bars)
             
-            write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": CHECKED TRADE")
-            if os.path.exists("contract_request.p"): check_trade(ib) # If bot is running check for trade
+            if bars_length > file_length:
+                last_bar = util.df(bars).loc[:,['date', 'open', 'high', 'low', 'close']].tail(bars_length-file_length)
+                last_bar.to_csv('data/' + requested_contract + '.csv', mode = 'a', index=False, header = False)
 
-        
+                file_length = bars_length
+                
+                if os.path.exists("bot_running.p"): check_trade(ib); write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": CHECKED TRADE")
+        except:
+            pass
+
         # Check for new trade request
         if os.path.exists("trade_order.p"):
 
@@ -92,9 +92,8 @@ while True:
             order = MarketOrder(order_action, amount)
             trade = ib_orders.placeOrder(contract, order)
             ib_orders.sleep(3)
-            filled_price = trade.orderStatus.avgFillPrice
-            print(filled_price)
-            write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": " + order_action + " ORDER FILLED FOR " + contract + " AT PRICE $" + str(filled_price))
+            fill_price = trade.orderStatus.avgFillPrice
+            write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": " + order_action + " ORDER FILLED FOR " + trade_order['contract'] + " AT $" + str(fill_price))
             ib_orders.disconnect() 
 
         # Retrieve and send account data
@@ -123,5 +122,6 @@ while True:
             df = util.df(bars)
             df.loc[:,['date', 'open', 'high', 'low', 'close']].to_csv('data/' + requested_contract + '.csv', index=False)
 
-    except:
-        quit()
+    except Exception as e:
+        print(e)
+        pass
