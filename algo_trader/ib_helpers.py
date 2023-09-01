@@ -6,7 +6,7 @@ def cleanup_files():
     if os.path.exists("bot_running.p"): os.remove("bot_running.p")
     if os.path.exists("contract_request.p"): os.remove("contract_request.p")
     if os.path.exists("trade_order.p"): os.remove("trade_order.p")
-    if os.path.exists("account_data.txt"): os.remove("account_data.txt")
+    if os.path.exists("account_data.p"): os.remove("account_data.p")
     if os.path.exists("console.txt"): os.remove("console.txt")
 
 
