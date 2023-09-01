@@ -13,26 +13,6 @@ df = None
 contract = '' 
 bar_size = ''
 
-
-#test data
-# 
-# row1 = html.Tr([html.Td(test_data[x.value]) for x in test_data])
-# row2 = html.Tr([html.Td("Ford"), html.Td("Prefect")])
-# row3 = html.Tr([html.Td("Zaphod"), html.Td("Beeblebrox")])
-# row4 = html.Tr([html.Td("Trillian"), html.Td("Astra")])
-
-# test_data = pd.DataFrame({
-#      '2021-05-10 09:30:00': {'date': '2021-05-10 09:30:00', 'contract': 'MES', 'quantity': 2, 'order_action': 'buy', 'fillprice': 423.0}
-# })
-
-orders = pd.DataFrame({
-
-    'DATE': ['05/10 09:30', '05/10 09:30','05/10 09:30','05/10 09:30', '05/10 09:30','05/10 09:30','05/10 09:30', '05/10 09:30','05/10 09:30',]
-    ,'TKR': ['MES', 'MES', 'MES','MES', 'MES', 'MES','MES', 'MES', 'MES']
-    ,'Q': [2, 2, 2,2, 2, 2,2, 2, 2]
-    ,'ACTN': ['buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy',]
-    ,'PX': [423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0] 
-})
 # Initialize Dash App
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
@@ -117,7 +97,7 @@ app.layout = dbc.Container(
                                         "overflow-y": "scroll",},
                                     children = [
                                         dbc.Table.from_dataframe(
-                                            df= orders,
+                                            df = pd.DataFrame(columns = constants.POSITION_TABLE_COLUMNS),
                                             id = 'account_positions', 
                                             striped=True,
                                             bordered=True,
