@@ -94,7 +94,7 @@ app.layout = dbc.Container(
                                     style =  {
                                         'height' : '30vh',
                                         'overflowX': 'auto',
-                                        "overflow-y": "scroll",},
+                                        "overflow-y": "auto",},
                                     children = [
                                         dbc.Table.from_dataframe(
                                             df = pd.DataFrame(columns = constants.POSITION_TABLE_COLUMNS),
@@ -320,6 +320,7 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_d
     while not os.path.exists('data/' + new_contract + '.csv'):
         time.sleep(0.1)
 
+    open('data/' + new_contract + '.csv').seek(0)
     df = pd.read_csv('data/' + new_contract + '.csv')    
     fig = get_fig((df.tail(constants.NUM_BARS + 100)).reset_index(drop=True), new_studies)
 
