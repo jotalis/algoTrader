@@ -25,4 +25,6 @@ ADD_OPTIONS = [
     {"label": html.Span("EARLY EXIT", style={"font-size": 15, "padding-left": 5}), "value": "EARLY EXIT"},
 ]
 
+POSITION_TABLE_COLUMNS = ['DATE', 'TKR', 'ACTN', 'Q', 'FILL PX']
+
 NUM_BARS = 150

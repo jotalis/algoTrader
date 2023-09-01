@@ -13,6 +13,7 @@ duration = '2 D'
 rth = False
 file_length = 0
 client_id = 1
+account_data = {}
 # Initialize IB-Insync
 ib = IB()
 ib.connect('127.0.0.1', 7497, 0)
@@ -82,32 +83,49 @@ while True:
             os.remove("trade_order.p")
             order_action = trade_order['order_action']
             contract = constants.CONTRACTS[trade_order['contract']]
-            amount = int(trade_order['amount'])
+            quantity = int(trade_order['amount'])
 
             
             # Fill in missing contract details
             ib_orders.qualifyContracts(contract)
             
             # Place order
-            order = MarketOrder(order_action, amount)
+            order = MarketOrder(order_action, quantity)
             trade = ib_orders.placeOrder(contract, order)
             ib_orders.sleep(3)
             fill_price = trade.orderStatus.avgFillPrice
+            
+            # Communicate data to dash
             write_to_console(str(datetime.now().strftime("%H:%M:%S")) + ": " + order_action + " ORDER FILLED FOR " + trade_order['contract'] + " AT $" + str(fill_price))
+            # order_data = {
+            #     'date': str(datetime.now().strftime("%H:%M:%S")),
+            #     'contract': trade_order['contract'],
+            #     'quantity': quantity,
+            #     'order_action': order_action,
+            #     'fill_price': fill_price
+            # }
+            # account_data.get('orders', {})[str(datetime.now().strftime("%H:%M:%S"))] = order_data
+            order_data = {
+                'date': str(datetime.now().strftime("%m/%d %H:%M")),
+                'contract': trade_order['contract'],
+                'quantity': quantity,
+                'action': order_action,
+                'fill px': fill_price
+            }
+            account_data['positions'] = [account_data.get(column, []).append(order_data[column]) for column in constants.POSITION_TABLE_COLUMNS]
+            
             ib_orders.disconnect() 
 
         # Retrieve and send account data
         account_summary = ib.accountSummary()
         for x in account_summary:
             if x.tag == "CashBalance" and x.currency == "USD":
-                with open("account_data.txt", "w") as file:
-                    file.write(x.value)
-
+                account_data['balance'] = x.value
+                pickle.dump(account_data, open('account_data.p', 'wb'))
         current_time = datetime.now()
         if current_time.hour == 13 and current_time.minute == 59 and current_time.second == 55:
 
             time.sleep(30)
-            # ib.cancelHistoricalData(bars)
             ib.disconnect()
             ib.connect('127.0.0.1', 7497, client_id)
             client_id += 1

@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, Output, Input, State
+from dash import Dash, html, dcc, Output, Input, State, dash_table
 import pandas as pd
 from algo_trader import constants
 from algo_trader.studies import *
@@ -13,6 +13,26 @@ df = None
 contract = '' 
 bar_size = ''
 
+
+#test data
+# 
+# row1 = html.Tr([html.Td(test_data[x.value]) for x in test_data])
+# row2 = html.Tr([html.Td("Ford"), html.Td("Prefect")])
+# row3 = html.Tr([html.Td("Zaphod"), html.Td("Beeblebrox")])
+# row4 = html.Tr([html.Td("Trillian"), html.Td("Astra")])
+
+# test_data = pd.DataFrame({
+#      '2021-05-10 09:30:00': {'date': '2021-05-10 09:30:00', 'contract': 'MES', 'quantity': 2, 'order_action': 'buy', 'fillprice': 423.0}
+# })
+
+orders = pd.DataFrame({
+
+    'DATE': ['05/10 09:30', '05/10 09:30','05/10 09:30','05/10 09:30', '05/10 09:30','05/10 09:30','05/10 09:30', '05/10 09:30','05/10 09:30',]
+    ,'TKR': ['MES', 'MES', 'MES','MES', 'MES', 'MES','MES', 'MES', 'MES']
+    ,'Q': [2, 2, 2,2, 2, 2,2, 2, 2]
+    ,'ACTN': ['buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy', 'buy',]
+    ,'PX': [423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0, 423.0] 
+})
 # Initialize Dash App
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
@@ -25,54 +45,110 @@ app.layout = dbc.Container(
         dcc.Store(id='scroll-zoom-store', data=True),
         dbc.Row([
             dbc.Col([
-                dbc.Card(
-                [
-                    dbc.CardHeader(html.H2("GRAPH DASHBOARD", style = {'text-decoration' : 'underline'})),
+                dbc.Card([
+                    dbc.CardHeader(
+                        html.H2(
+                            "GRAPH DASHBOARD",
+                            style = {
+                                'text-decoration' : 'underline'
+                            }
+                        )
+                    ),
                     dbc.CardBody([
-                        html.H4("Select Studies", className="card-text"),
+                        html.H4(
+                            "Select Studies",
+                            className="card-text"
+                        ),
                         dbc.Checklist(
                             id = "studies_checklist",
                             options = constants.STUDIES,
                             value=[],
                         ),
                     ])
-                ],
-                color="#202A44",
-                className = 'mt-3 mb-3 text-light',
-                style = {'height': '48vh'}
+                    ],
+                    color="#202A44",
+                    className = 'mt-3 mb-3 text-light',
+                    style = {
+                        'height': '48vh'
+                    }
                 ),  
-                dbc.Card(
-                [
-                    dbc.CardHeader(html.H2("ACCOUNT SUMMARY", style = {'text-decoration' : 'underline'})),
+                dbc.Card([
+                    dbc.CardHeader(
+                        html.H2(
+                            "ACCOUNT SUMMARY",
+                            style = {
+                                'text-decoration' : 'underline'
+                            }
+                        )
+                    ),
                     dbc.CardBody([
                         html.Div(
                             children = [                        
-                            html.H4("BALANCE:", className="card-text", ),
-                            html.Strong(children = "0", id = 'account_balance', className="card-text"),
-                            html.Br(),
-                            html.Strong(children = "", id = 'account_pl', className="card-text" ),
-                        ]
-                        
+                                html.H4(
+                                    "BALANCE:",
+                                    className="card-text", 
+                                ),
+                                html.Strong(
+                                    children = "$0",
+                                    id = 'account_balance',
+                                    className="card-text"
+                                ),
+                                html.Br(),
+                                html.Strong(
+                                    children = "",
+                                    id = 'account_pl',
+                                    className="card-text"
+                                ),
+                            ]
                         ),
                         html.Div(
-                            style = {'margin-top' : '15px'},
+                            style = {
+                                'margin-top':'15px'
+                            },
                             children = [                 
-                            html.H4("OPEN POSITIONS:", className="card-text", ),
-                            html.Strong(children = "", id = 'account_positions', className="card-text"),
-                        ]),
+                                html.H4(
+                                    "ORDERS:",
+                                    className="card-text"
+                                ),
+                                html.Div(
+                                    style =  {
+                                        'height' : '30vh',
+                                        'overflowX': 'auto',
+                                        "overflow-y": "scroll",},
+                                    children = [
+                                        dbc.Table.from_dataframe(
+                                            df= orders,
+                                            id = 'account_positions', 
+                                            striped=True,
+                                            bordered=True,
+                                            hover=True,
+                                            color = 'dark',
+                                            size = 'sm',
+                                            style = {
+                                                'fontFamily': 'Arial',
+                                                'overflowX': 'auto',
+                                                'overflowY': 'auto',
+                                                'textAlign': 'left',}
+                                        ),
+                                    ]
+                                )
+                            ]
+                        ),
                     ])
                 ],
                 color="#202A44",
                 className = 'mt-3 mb-3 text-light',
-                style = {'height': '48vh'}
-                ),
+                style = {
+                    'height': '48vh'
+                }),
        
             ],
-            width = {'size': 2, 'order': 1}),
-            
+            width = {
+                'size': 2,
+                'order': 1
+            }),
             dbc.Col([
-                dbc.Card(
-                [
+                dbc.Card([
                     dbc.CardHeader([
                         html.Div(
                             children = [
@@ -80,7 +156,11 @@ app.layout = dbc.Container(
                                     options = list(constants.CONTRACTS.keys()),
                                     value = 'MES',
                                     clearable = False,
-                                    style = {"float": "left", "width": "10vw", "font-weight": "bold"}
+                                    style = {
+                                        "float": "left",
+                                        "width": "10vw",
+                                        "font-weight": "bold"
+                                    }
                                 ),
                             ]
                         ),
@@ -91,7 +171,11 @@ app.layout = dbc.Container(
                                     options = constants.TIME_INTERVALS,
                                     clearable = False,
                                     value = '1 min',
-                                    style = {"float": "right", "width": "10vw", "font-weight": "bold"}
+                                    style = {
+                                        "float": "right",
+                                        "width": "10vw",
+                                        "font-weight": "bold"
+                                    }
                                 ),
                             ],  
                         )]
@@ -99,22 +183,33 @@ app.layout = dbc.Container(
                     dbc.CardBody([
                         dcc.Graph(
                             id="graph_subplots",
-                            config={'displayModeBar': False},
-                            style={'height': '90vh'},
+                            config={
+                                'displayModeBar': False
+                            },
+                            style={
+                                'height': '90vh'
+                            },
                         ),
                     ]),
                 ],
                 color="#202A44",
                 className = 'mt-3 mb-3',
-                style = {'height': '97vh'}
-                ),
+                style = {
+                    'height': '97vh'
+                }),
             ],
-            width = {'size': 8, 'order': 2}),
-
+            width = {
+                'size': 8,
+                'order': 2
+            }),
             dbc.Col([
-                dbc.Card(
-                [
-                    dbc.CardHeader(html.H2("BOT DASHBOARD",  style = {'text-decoration' : 'underline'})),
+                dbc.Card([
+                    dbc.CardHeader(
+                        html.H2("BOT DASHBOARD",
+                        style = {
+                            'text-decoration':'underline'
+                        })
+                    ),
                     dbc.CardBody([
                         html.Div(children = [                        
                             html.H4("SELECT STUDIES (2 MAX)"),
@@ -125,7 +220,9 @@ app.layout = dbc.Container(
                             ),
                         ]),
                         html.Div(
-                            style = {'margin-top' : '15px'},
+                            style = {
+                                'margin-top':'15px'
+                            },
                             children = [                        
                             html.H4("ADDITIONAL OPTIONS"),
                             dbc.Checklist(
@@ -135,11 +232,25 @@ app.layout = dbc.Container(
                             ),
                         ]),
                         html.Div(
-                            style = {'margin-top' : '15px'},
+                            style = {
+                                'margin-top':'15px'
+                            },
                             children = [
-                            html.H4("BOT STATUS: STOPPED", id = 'bot_status'),
-
-                            dbc.Button("START", n_clicks = 0, color="success", id = "run_bot_button" ,className="mr-3 mb-3", style = {'margin-right' : '15px' ,'width' :'7vw'}),
+                            html.H4(
+                                "BOT STATUS: STOPPED",
+                                id = 'bot_status'
+                            ),
+                            dbc.Button(
+                                "START", 
+                                n_clicks = 0,
+                                color="success",
+                                id = "run_bot_button",
+                                className="mr-3 mb-3",
+                                style = {
+                                    'margin-right':'15px',
+                                    'width' :'7vw'
+                                }
+                            ),
                             dbc.Alert(
                                 "Please select atleast one study",
                                 id="bot-erorr-alert",
@@ -149,10 +260,11 @@ app.layout = dbc.Container(
                             ),
                         ]),                       
                         html.Div(
-                            style = {'margin-top' : '15px'},
-                            
+                            style = {
+                                'margin-top':'15px'
+                            },
                             children = [
-                                html.H4("BOT CONSOLE", id = 'bot_console'),
+                                html.H4("BOT CONSOLE"),
                                 dbc.Card([
                                     dbc.CardBody(
                                         id = "bot_console",
@@ -160,25 +272,33 @@ app.layout = dbc.Container(
                                     )
                                 ],
                                 color = "dark",
-                                style = {'height': '65vh', "overflow-y": "scroll", "flex-direction": "column-reverse"},
+                                style = {
+                                    'height': '65vh',
+                                    "overflow-y": "scroll",
+                                    "flex-direction": "column-reverse"
+                                },
                                 className = 'mb-3 text-light',
                                 )
                             ]
                         )
-
                     ]),
                 ],
                 color="#202A44",
                 className = 'mt-3 mb-3 text-light',
-                style = {'height': '96vh',}
-                ),
+                style = {
+                    'height': '96vh',
+                }),
             ],
-            width = {'size': 2, 'order': 3}),
+            width = {
+                'size': 2,
+                'order': 3
+            }),
         ]),
     ],
     fluid = True,
-    style = {'backgroundColor': '#182033'}
-    
+    style = {
+        'backgroundColor': '#182033'
+    }    
 )
 
 # ~~~Define app callbacks~~~
@@ -248,15 +368,20 @@ def update_graphs(new_contract, new_bar_size, new_studies, intervals, relayout_d
 @app.callback(
     Output('account_balance', 'children'),
     Output('account_pl', 'children'),
+    Output('account_positions', 'children'),
     Input('account_summary_update', 'n_intervals'),
     State('account_balance', 'children'),
+    State('account_positions', 'children'),
 )
-def update_account_summary(intervals, account_balance):
-    if os.path.exists("account_data.txt"):
-        with open("account_data.txt", "r") as file:
-            balance = file.readline().strip()
+def update_account_summary(intervals, account_balance, orders):
+    if os.path.exists("account_data.p"):
+        account_summary = pickle.load(open('account_data.p', 'rb'))
+        balance = account_summary['balance']
         account_balance = '$' + balance
-    return [account_balance, 'P/L: $' + str(round(float(account_balance[1:]) - 103298.20, 2))]
+        if 'positions' in account_summary:
+            orders = pd.DataFrame(account_summary['positions'])
+        account_balance = '$' + balance
+    return [account_balance, 'P/L: $' + str(round(float(account_balance[1:]) - 103298.20, 2)), orders]
 
 # Bot Dashboard Callback
 prev_clicks, bot_running = 0, False
